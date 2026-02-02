@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { formatCurrency } from "@/lib/formatters";
-import { Plus, Wallet, Building2, CreditCard, PiggyBank, TrendingUp, Landmark } from "lucide-react";
+import { Plus, Wallet, Building2, CreditCard, PiggyBank, TrendingUp, Landmark, Pencil, Trash2 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertAccountSchema, type Account, type InsertAccount } from "@shared/schema";
 import { z } from "zod";
@@ -41,51 +40,275 @@ const accountTypeLabels: Record<string, string> = {
   loan: "Loan",
 };
 
+function EditAccountDialog({ account, onClose }: { account: Account; onClose: () => void }) {
+  const { toast } = useToast();
+
+  const form = useForm<AccountFormValues>({
+    resolver: zodResolver(accountFormSchema),
+    defaultValues: {
+      name: account.name,
+      institution: account.institution,
+      accountNumber: account.accountNumber || "",
+      accountType: account.accountType,
+      currentBalance: account.currentBalance?.toString() || "0",
+      owner: account.owner,
+      notes: account.notes || "",
+      isActive: account.isActive,
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: Partial<InsertAccount>) => {
+      return apiRequest('PATCH', `/api/accounts/${account.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/accounts'] });
+      toast({
+        title: "Account updated",
+        description: "Your account has been updated successfully.",
+      });
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('DELETE', `/api/accounts/${account.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/accounts'] });
+      toast({
+        title: "Account deleted",
+        description: "Your account has been removed.",
+      });
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: AccountFormValues) => {
+    updateMutation.mutate(data as InsertAccount);
+  };
+
+  return (
+    <DialogContent className="max-w-md">
+      <DialogHeader>
+        <DialogTitle>Edit Account</DialogTitle>
+        <DialogDescription>
+          Update your account details.
+        </DialogDescription>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Account Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., USAA Checking" {...field} data-testid="input-edit-account-name" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="institution"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Institution</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., USAA, Navy Federal" {...field} data-testid="input-edit-institution" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="accountType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Account Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-edit-account-type">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="checking">Checking</SelectItem>
+                      <SelectItem value="savings">Savings</SelectItem>
+                      <SelectItem value="credit">Credit Card</SelectItem>
+                      <SelectItem value="investment">Investment</SelectItem>
+                      <SelectItem value="loan">Loan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="owner"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Owner</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-edit-owner">
+                        <SelectValue placeholder="Select owner" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Kevin">Kevin</SelectItem>
+                      <SelectItem value="Jamie">Jamie</SelectItem>
+                      <SelectItem value="Joint">Joint</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="currentBalance"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Monthly Allocation</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-balance" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="accountNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Account Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Last 4 digits" {...field} value={field.value || ""} data-testid="input-edit-account-number" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Optional notes about this account" {...field} value={field.value || ""} data-testid="input-edit-notes" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <DialogFooter className="flex justify-between gap-2">
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              data-testid="button-delete-account"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-account">
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </DialogContent>
+  );
+}
+
 function AccountCard({ account }: { account: Account }) {
+  const [editOpen, setEditOpen] = useState(false);
   const Icon = accountTypeIcons[account.accountType] || Building2;
   const balance = parseFloat(account.currentBalance as string);
   const isNegative = balance < 0 || account.accountType === 'credit' || account.accountType === 'loan';
 
   return (
-    <Card className="hover-elevate" data-testid={`card-account-${account.id}`}>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-              <Icon className="h-5 w-5 text-muted-foreground" />
+    <>
+      <Card className="hover-elevate" data-testid={`card-account-${account.id}`}>
+        <CardContent className="pt-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
+                <Icon className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="font-semibold">{account.name}</h3>
+                <p className="text-sm text-muted-foreground">{account.institution}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold">{account.name}</h3>
-              <p className="text-sm text-muted-foreground">{account.institution}</p>
+            <div className="text-right">
+              <p className={`text-lg font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
+                {formatCurrency(Math.abs(balance))}<span className="text-sm font-normal text-muted-foreground">/mo</span>
+              </p>
+              <Badge variant="secondary" className="mt-1">
+                {accountTypeLabels[account.accountType]}
+              </Badge>
             </div>
           </div>
-          <div className="text-right">
-            <p className={`text-lg font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
-              {formatCurrency(Math.abs(balance))}<span className="text-sm font-normal text-muted-foreground">/mo</span>
+          {account.accountNumber && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Account: ****{account.accountNumber.slice(-4)}
             </p>
-            <Badge variant="secondary" className="mt-1">
-              {accountTypeLabels[account.accountType]}
-            </Badge>
-          </div>
-        </div>
-        {account.accountNumber && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Account: ****{account.accountNumber.slice(-4)}
-          </p>
-        )}
-        {account.notes && (
-          <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{account.notes}</p>
-        )}
-        <div className="mt-3 flex items-center gap-2">
-          <Badge variant={account.owner === 'Kevin' ? 'default' : account.owner === 'Jamie' ? 'secondary' : 'outline'}>
-            {account.owner}
-          </Badge>
-          {!account.isActive && (
-            <Badge variant="destructive">Inactive</Badge>
           )}
-        </div>
-      </CardContent>
-    </Card>
+          {account.notes && (
+            <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{account.notes}</p>
+          )}
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Badge variant={account.owner === 'Kevin' ? 'default' : account.owner === 'Jamie' ? 'secondary' : 'outline'}>
+                {account.owner}
+              </Badge>
+              {!account.isActive && (
+                <Badge variant="destructive">Inactive</Badge>
+              )}
+            </div>
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={() => setEditOpen(true)}
+              data-testid={`button-edit-account-${account.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <EditAccountDialog account={account} onClose={() => setEditOpen(false)} />
+      </Dialog>
+    </>
   );
 }
 

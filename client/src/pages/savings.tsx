@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { formatCurrency } from "@/lib/formatters";
-import { Plus, PiggyBank, TrendingUp, Wallet, Building2 } from "lucide-react";
+import { Plus, PiggyBank, Wallet, Pencil } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertSavingsAllocationSchema, insertIncomeSchema, type SavingsAllocation, type InsertSavingsAllocation, type Income, type InsertIncome, type Account } from "@shared/schema";
 import { z } from "zod";
@@ -29,68 +29,432 @@ const incomeFormSchema = insertIncomeSchema.extend({
 type SavingsFormValues = z.infer<typeof savingsFormSchema>;
 type IncomeFormValues = z.infer<typeof incomeFormSchema>;
 
-function SavingsCard({ allocation, account }: { allocation: SavingsAllocation; account?: Account }) {
-  const amount = parseFloat(allocation.amount as string);
+function EditSavingsDialog({ allocation, accounts, onClose }: { allocation: SavingsAllocation; accounts: Account[]; onClose: () => void }) {
+  const { toast } = useToast();
+
+  const form = useForm<SavingsFormValues>({
+    resolver: zodResolver(savingsFormSchema),
+    defaultValues: {
+      name: allocation.name,
+      amount: allocation.amount?.toString() || "0",
+      accountId: allocation.accountId || "",
+      notes: allocation.notes || "",
+      isActive: allocation.isActive,
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: Partial<InsertSavingsAllocation>) => {
+      return apiRequest('PATCH', `/api/savings-allocations/${allocation.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/savings-allocations'] });
+      toast({
+        title: "Savings updated",
+        description: "Your savings allocation has been updated.",
+      });
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update savings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('DELETE', `/api/savings-allocations/${allocation.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/savings-allocations'] });
+      toast({
+        title: "Savings deleted",
+        description: "Your savings allocation has been removed.",
+      });
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete savings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: SavingsFormValues) => {
+    updateMutation.mutate(data as InsertSavingsAllocation);
+  };
 
   return (
-    <Card className="hover-elevate" data-testid={`card-savings-${allocation.id}`}>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-green-100 dark:bg-green-900">
-              <PiggyBank className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold">{allocation.name}</h3>
-              {account && (
-                <p className="text-sm text-muted-foreground">{account.institution}</p>
-              )}
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-lg font-bold text-green-500">{formatCurrency(amount)}</p>
-            <p className="text-xs text-muted-foreground">per month</p>
-          </div>
-        </div>
-        {allocation.notes && (
-          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{allocation.notes}</p>
-        )}
-        {!allocation.isActive && (
-          <Badge variant="secondary" className="mt-3">Inactive</Badge>
-        )}
-      </CardContent>
-    </Card>
+    <DialogContent className="max-w-md">
+      <DialogHeader>
+        <DialogTitle>Edit Savings Allocation</DialogTitle>
+        <DialogDescription>
+          Update your savings goal.
+        </DialogDescription>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Emergency Fund" {...field} data-testid="input-edit-savings-name" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Monthly Amount</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-savings-amount" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="accountId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Account (Optional)</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
+                  <FormControl>
+                    <SelectTrigger data-testid="select-edit-savings-account">
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Optional notes" {...field} value={field.value || ""} data-testid="input-edit-savings-notes" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <DialogFooter className="flex justify-between gap-2">
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              data-testid="button-delete-savings"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-savings">
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </DialogContent>
   );
 }
 
-function IncomeCard({ income, account }: { income: Income; account?: Account }) {
+function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accounts: Account[]; onClose: () => void }) {
+  const { toast } = useToast();
+
+  const form = useForm<IncomeFormValues>({
+    resolver: zodResolver(incomeFormSchema),
+    defaultValues: {
+      name: income.name,
+      amount: income.amount?.toString() || "0",
+      frequency: income.frequency,
+      accountId: income.accountId || "",
+      notes: income.notes || "",
+      isActive: income.isActive,
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: Partial<InsertIncome>) => {
+      return apiRequest('PATCH', `/api/incomes/${income.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/incomes'] });
+      toast({
+        title: "Income updated",
+        description: "Your income source has been updated.",
+      });
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update income. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('DELETE', `/api/incomes/${income.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/incomes'] });
+      toast({
+        title: "Income deleted",
+        description: "Your income source has been removed.",
+      });
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete income. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: IncomeFormValues) => {
+    updateMutation.mutate(data as InsertIncome);
+  };
+
+  return (
+    <DialogContent className="max-w-md">
+      <DialogHeader>
+        <DialogTitle>Edit Income Source</DialogTitle>
+        <DialogDescription>
+          Update your income details.
+        </DialogDescription>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Salary" {...field} data-testid="input-edit-income-name" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-income-amount" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="frequency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Frequency</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-edit-income-frequency">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={form.control}
+            name="accountId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Deposit Account</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
+                  <FormControl>
+                    <SelectTrigger data-testid="select-edit-income-account">
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Optional notes" {...field} value={field.value || ""} data-testid="input-edit-income-notes" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <DialogFooter className="flex justify-between gap-2">
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              data-testid="button-delete-income"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-income">
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </DialogContent>
+  );
+}
+
+function SavingsCard({ allocation, account, accounts }: { allocation: SavingsAllocation; account?: Account; accounts: Account[] }) {
+  const [editOpen, setEditOpen] = useState(false);
+  const amount = parseFloat(allocation.amount as string);
+
+  return (
+    <>
+      <Card className="hover-elevate" data-testid={`card-savings-${allocation.id}`}>
+        <CardContent className="pt-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-green-100 dark:bg-green-900">
+                <PiggyBank className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold">{allocation.name}</h3>
+                {account && (
+                  <p className="text-sm text-muted-foreground">{account.institution}</p>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-bold text-green-500">{formatCurrency(amount)}</p>
+              <p className="text-xs text-muted-foreground">per month</p>
+            </div>
+          </div>
+          {allocation.notes && (
+            <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{allocation.notes}</p>
+          )}
+          <div className="mt-3 flex items-center justify-between gap-2">
+            {!allocation.isActive && (
+              <Badge variant="secondary">Inactive</Badge>
+            )}
+            <div className="flex-1" />
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={() => setEditOpen(true)}
+              data-testid={`button-edit-savings-${allocation.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <EditSavingsDialog allocation={allocation} accounts={accounts} onClose={() => setEditOpen(false)} />
+      </Dialog>
+    </>
+  );
+}
+
+function IncomeCard({ income, account, accounts }: { income: Income; account?: Account; accounts: Account[] }) {
+  const [editOpen, setEditOpen] = useState(false);
   const amount = parseFloat(income.amount as string);
 
   return (
-    <Card className="hover-elevate" data-testid={`card-income-${income.id}`}>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-900">
-              <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+    <>
+      <Card className="hover-elevate" data-testid={`card-income-${income.id}`}>
+        <CardContent className="pt-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-900">
+                <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold">{income.name}</h3>
+                {account && (
+                  <p className="text-sm text-muted-foreground">{account.institution}</p>
+                )}
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold">{income.name}</h3>
-              {account && (
-                <p className="text-sm text-muted-foreground">{account.institution}</p>
-              )}
+            <div className="text-right">
+              <p className="text-lg font-bold text-blue-500">{formatCurrency(amount)}</p>
+              <Badge variant="outline" className="mt-1">{income.frequency}</Badge>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-lg font-bold text-blue-500">{formatCurrency(amount)}</p>
-            <Badge variant="outline" className="mt-1">{income.frequency}</Badge>
+          {income.notes && (
+            <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{income.notes}</p>
+          )}
+          <div className="mt-3 flex items-center justify-end gap-2">
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={() => setEditOpen(true)}
+              data-testid={`button-edit-income-${income.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
           </div>
-        </div>
-        {income.notes && (
-          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{income.notes}</p>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <EditIncomeDialog income={income} accounts={accounts} onClose={() => setEditOpen(false)} />
+      </Dialog>
+    </>
   );
 }
 
@@ -487,7 +851,8 @@ export default function Savings() {
                   <IncomeCard 
                     key={income.id} 
                     income={income} 
-                    account={getAccountForId(income.accountId)} 
+                    account={getAccountForId(income.accountId)}
+                    accounts={accounts}
                   />
                 ))}
               </div>
@@ -512,7 +877,8 @@ export default function Savings() {
                   <SavingsCard 
                     key={allocation.id} 
                     allocation={allocation} 
-                    account={getAccountForId(allocation.accountId)} 
+                    account={getAccountForId(allocation.accountId)}
+                    accounts={accounts}
                   />
                 ))}
               </div>

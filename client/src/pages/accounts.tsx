@@ -61,7 +61,7 @@ function AccountCard({ account }: { account: Account }) {
           </div>
           <div className="text-right">
             <p className={`text-lg font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
-              {formatCurrency(Math.abs(balance))}
+              {formatCurrency(Math.abs(balance))}<span className="text-sm font-normal text-muted-foreground">/mo</span>
             </p>
             <Badge variant="secondary" className="mt-1">
               {accountTypeLabels[account.accountType]}
@@ -230,7 +230,7 @@ function AddAccountDialog() {
                 name="currentBalance"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current Balance</FormLabel>
+                    <FormLabel>Monthly Allocation</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-balance" />
                     </FormControl>
@@ -298,7 +298,7 @@ export default function Accounts() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight" data-testid="text-page-title">Accounts</h1>
-          <p className="text-muted-foreground">Manage your bank accounts and credit cards</p>
+          <p className="text-muted-foreground">Monthly allocations to your bank accounts and credit cards</p>
         </div>
         <AddAccountDialog />
       </div>
@@ -306,14 +306,14 @@ export default function Accounts() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total Checking</CardDescription>
-            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalChecking)}</CardTitle>
+            <CardDescription>Monthly Checking</CardDescription>
+            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalChecking)}/mo</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total Savings</CardDescription>
-            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalSavings)}</CardTitle>
+            <CardDescription>Monthly Savings</CardDescription>
+            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalSavings)}/mo</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -324,8 +324,8 @@ export default function Accounts() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Investments</CardDescription>
-            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalInvestment)}</CardTitle>
+            <CardDescription>Monthly Investments</CardDescription>
+            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalInvestment)}/mo</CardTitle>
           </CardHeader>
         </Card>
       </div>

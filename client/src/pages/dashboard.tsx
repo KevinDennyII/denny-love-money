@@ -84,7 +84,7 @@ function AccountsList({ accounts, isLoading }: { accounts: Account[]; isLoading:
                   <span className="text-sm font-medium">{account.name}</span>
                   <span className="text-xs text-muted-foreground">{account.institution}</span>
                 </div>
-                <span className="text-sm font-semibold">{formatCurrency(account.currentBalance)}</span>
+                <span className="text-sm font-semibold">{formatCurrency(account.currentBalance)}<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
               </div>
             ))}
           </div>
@@ -100,7 +100,7 @@ function AccountsList({ accounts, isLoading }: { accounts: Account[]; isLoading:
                   <span className="text-sm font-medium">{account.name}</span>
                   <span className="text-xs text-muted-foreground">{account.institution}</span>
                 </div>
-                <span className="text-sm font-semibold">{formatCurrency(account.currentBalance)}</span>
+                <span className="text-sm font-semibold">{formatCurrency(account.currentBalance)}<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
               </div>
             ))}
           </div>
@@ -308,8 +308,8 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Accounts</CardTitle>
-            <CardDescription>Your bank accounts</CardDescription>
+            <CardTitle className="text-lg">Monthly Allocations</CardTitle>
+            <CardDescription>Income allocated to each account</CardDescription>
           </CardHeader>
           <CardContent>
             <AccountsList accounts={accounts} isLoading={accountsLoading} />

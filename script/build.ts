@@ -1,6 +1,6 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile } from "fs/promises";
+import { rm, readFile, writeFile } from "fs/promises";
 
 // server deps to bundle to reduce openat(2) syscalls
 // which helps cold start times
@@ -50,15 +50,29 @@ async function buildAll() {
     entryPoints: ["server/index.ts"],
     platform: "node",
     bundle: true,
-    format: "cjs",
-    outfile: "dist/index.cjs",
+    format: "esm",
+    outfile: "dist/index.mjs",
     define: {
       "process.env.NODE_ENV": '"production"',
     },
     minify: true,
     external: externals,
     logLevel: "info",
+    banner: {
+      js: `import { createRequire } from 'module'; const require = createRequire(import.meta.url);`,
+    },
   });
+
+  // Create a CJS wrapper that imports the ESM module
+  // This allows the deployment to use ./dist/index.cjs which then loads the ESM module
+  const cjsWrapper = `
+import('./index.mjs').catch(err => {
+  console.error('Failed to load application:', err);
+  process.exit(1);
+});
+`;
+  await writeFile("dist/index.cjs", cjsWrapper);
+  console.log("Created CJS wrapper for ESM module");
 }
 
 buildAll().catch((err) => {

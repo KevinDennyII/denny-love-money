@@ -329,8 +329,9 @@ function DebtCard({ debt }: { debt: Debt }) {
   const [editOpen, setEditOpen] = useState(false);
   const Icon = debtTypeIcons[debt.debtType] || CreditCard;
   const balance = parseFloat(debt.currentBalance as string);
-  const original = debt.originalBalance ? parseFloat(debt.originalBalance as string) : balance * 1.5;
+  const original = debt.originalBalance ? parseFloat(debt.originalBalance as string) : balance;
   const progress = getDebtPayoffProgress(balance, original);
+  const paidAmount = original - balance;
   const minimumPayment = debt.minimumPayment ? parseFloat(debt.minimumPayment as string) : null;
 
   return (
@@ -364,8 +365,14 @@ function DebtCard({ debt }: { debt: Debt }) {
           {!debt.isPaidOff && (
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Payoff Progress</span>
-                <span className="font-medium">{progress.toFixed(1)}%</span>
+                <span className="text-muted-foreground">Paid Off</span>
+                <span className="font-medium">
+                  {debt.originalBalance ? (
+                    <>{formatCurrency(paidAmount)} <span className="text-muted-foreground">({progress.toFixed(0)}%)</span></>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Set original balance to track</span>
+                  )}
+                </span>
               </div>
               <Progress value={progress} className="h-2" />
             </div>
@@ -404,6 +411,11 @@ function DebtCard({ debt }: { debt: Debt }) {
 
           {debt.notes && (
             <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{debt.notes}</p>
+          )}
+          {debt.lastUpdated && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Last updated: {new Date(debt.lastUpdated).toLocaleString()}
+            </p>
           )}
         </CardContent>
       </Card>

@@ -194,7 +194,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDebt(id: string, debt: Partial<InsertDebt>): Promise<Debt | undefined> {
-    const [updated] = await db.update(debts).set(debt).where(eq(debts.id, id)).returning();
+    const [updated] = await db.update(debts).set({ ...debt, lastUpdated: new Date() }).where(eq(debts.id, id)).returning();
     return updated;
   }
 

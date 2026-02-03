@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/formatters";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ChevronDown } from "lucide-react";
 import { type MedicalBill, type HsaPayback } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -32,6 +33,18 @@ export default function Medical() {
   const paidHsa = sortedHsaPaybacks.filter(h => h.isPaid);
   const totalHsaPending = unpaidHsa.reduce((sum, h) => sum + parseFloat(h.amount as string), 0);
   const totalHsaPaid = paidHsa.reduce((sum, h) => sum + parseFloat(h.amount as string), 0);
+
+  // Group unpaid HSA by year
+  const unpaidHsaByYear = unpaidHsa.reduce((acc, payback) => {
+    const year = payback.year;
+    if (!acc[year]) {
+      acc[year] = [];
+    }
+    acc[year].push(payback);
+    return acc;
+  }, {} as Record<number, HsaPayback[]>);
+
+  const sortedUnpaidYears = Object.keys(unpaidHsaByYear).map(Number).sort((a, b) => a - b);
 
   return (
     <div className="space-y-6">
@@ -155,18 +168,32 @@ export default function Medical() {
                 </CardHeader>
                 <CardContent>
                   {unpaidHsa.length > 0 ? (
-                    <div className="divide-y divide-border">
+                    <div className="space-y-6">
                       <AnimatePresence initial={false}>
-                        {unpaidHsa.map((payback) => (
-                          <motion.div
-                            key={payback.id}
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <HsaPaybackCard payback={payback} />
-                          </motion.div>
+                        {sortedUnpaidYears.map((year) => (
+                          <Collapsible key={year} defaultOpen className="space-y-2">
+                            <div className="sticky top-0 bg-card z-10 pt-2 pb-1 border-b">
+                              <CollapsibleTrigger className="flex items-center w-full justify-between hover:bg-muted/50 p-1 rounded group">
+                                <h3 className="font-semibold text-sm text-muted-foreground">{year}</h3>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                              </CollapsibleTrigger>
+                            </div>
+                            <CollapsibleContent>
+                              <div className="divide-y divide-border">
+                                {unpaidHsaByYear[year].map((payback) => (
+                                  <motion.div
+                                    key={payback.id}
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                  >
+                                    <HsaPaybackCard payback={payback} />
+                                  </motion.div>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
                         ))}
                       </AnimatePresence>
                     </div>

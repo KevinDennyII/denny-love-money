@@ -9,6 +9,12 @@ import {
   hsaPaybacks, 
   assets 
 } from "@shared/schema";
+import XLSX from 'xlsx';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function seedDatabase() {
   // Check if we already have data
@@ -124,24 +130,56 @@ export async function seedDatabase() {
   ];
   await db.insert(medicalBills).values(medicalBillsData);
 
-  // Seed HSA Paybacks (sample from Excel)
-  const hsaPaybacksData = [
-    { description: "Abcd Pediatrics", amount: "30", year: 2022, isPaid: true },
-    { description: "To Jamie for Total Healthcare Payment", amount: "191.97", year: 2021, isPaid: true },
-    { description: "Methodist physicians (Jamie)", amount: "89.61", year: 2021, isPaid: false },
-    { description: "Peds doc bill", amount: "107.48", year: 2021, isPaid: false },
-    { description: "Co pays for kids doc visits", amount: "240", year: 2021, isPaid: false },
-    { description: "Texas Pediatrics - Sleep consultation copay", amount: "60", year: 2021, isPaid: true },
-    { description: "Physical visit with Integrative", amount: "350", year: 2021, isPaid: false },
-    { description: "Supergoop Sunscreen", amount: "34", year: 2022, isPaid: false },
-    { description: "Dermatologist Copay", amount: "60", year: 2022, isPaid: false },
-    { description: "Final payment Dr. Albricht", amount: "63.21", year: 2022, isPaid: false },
-    { description: "Kids allergist co pay", amount: "120", year: 2022, isPaid: false },
-    { description: "Emma ENT co pay", amount: "60", year: 2022, isPaid: true },
-    { description: "Emma Urgent Care Co-pay", amount: "86", year: 2022, isPaid: true },
-    { description: "Emma Nasal Spray Medication", amount: "62", year: 2022, isPaid: true },
-    { description: "Emma Allergy Copay visit", amount: "60", year: 2022, isPaid: true },
-  ];
+  // Seed HSA Paybacks
+  let hsaPaybacksData: any[] = [];
+  try {
+    const excelPath = path.resolve(__dirname, '../attached_assets/Estimated_Denny_Monthly_Finances_1770003508732.xlsx');
+    console.log(`Attempting to read HSA data from: ${excelPath}`);
+    
+    if (typeof XLSX.readFile === 'function') {
+      const workbook = XLSX.readFile(excelPath);
+      const hsaSheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('hsa'));
+      
+      if (hsaSheetName) {
+        const sheet = workbook.Sheets[hsaSheetName];
+        const data = XLSX.utils.sheet_to_json(sheet);
+        
+        hsaPaybacksData = data.map((row: any) => ({
+          description: row['For What?'] || 'Unknown Description',
+          amount: String(row['Amount'] || 0),
+          year: parseInt(row['Year'] || new Date().getFullYear()),
+          isPaid: !!row['Paid?'],
+          notes: 'Imported from Excel',
+        }));
+        
+        console.log(`Successfully loaded ${hsaPaybacksData.length} HSA records from Excel.`);
+      }
+    }
+  } catch (error) {
+    console.warn("Failed to load HSA data from Excel, falling back to sample data:", error);
+  }
+
+  if (hsaPaybacksData.length === 0) {
+    console.log("Using sample HSA data.");
+    hsaPaybacksData = [
+      { description: "Abcd Pediatrics", amount: "30", year: 2022, isPaid: true },
+      { description: "To Jamie for Total Healthcare Payment", amount: "191.97", year: 2021, isPaid: true },
+      { description: "Methodist physicians (Jamie)", amount: "89.61", year: 2021, isPaid: false },
+      { description: "Peds doc bill", amount: "107.48", year: 2021, isPaid: false },
+      { description: "Co pays for kids doc visits", amount: "240", year: 2021, isPaid: false },
+      { description: "Texas Pediatrics - Sleep consultation copay", amount: "60", year: 2021, isPaid: true },
+      { description: "Physical visit with Integrative", amount: "350", year: 2021, isPaid: false },
+      { description: "Supergoop Sunscreen", amount: "34", year: 2022, isPaid: false },
+      { description: "Dermatologist Copay", amount: "60", year: 2022, isPaid: false },
+      { description: "Final payment Dr. Albricht", amount: "63.21", year: 2022, isPaid: false },
+      { description: "Kids allergist co pay", amount: "120", year: 2022, isPaid: false },
+      { description: "Emma ENT co pay", amount: "60", year: 2022, isPaid: true },
+      { description: "Emma Urgent Care Co-pay", amount: "86", year: 2022, isPaid: true },
+      { description: "Emma Nasal Spray Medication", amount: "62", year: 2022, isPaid: true },
+      { description: "Emma Allergy Copay visit", amount: "60", year: 2022, isPaid: true },
+    ];
+  }
+
   await db.insert(hsaPaybacks).values(hsaPaybacksData);
 
   // Seed Assets based on Net Worth sheet

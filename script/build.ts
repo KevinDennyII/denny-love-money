@@ -51,7 +51,7 @@ async function buildAll() {
     platform: "node",
     bundle: true,
     format: "esm",
-    outfile: "dist/index.mjs",
+    outfile: "dist/index.js",
     define: {
       "process.env.NODE_ENV": '"production"',
     },
@@ -59,18 +59,13 @@ async function buildAll() {
     external: externals,
     logLevel: "info",
     banner: {
-      js: `import { createRequire } from 'module'; const require = createRequire(import.meta.url);`,
+      js: `import { createRequire } from 'module'; import { fileURLToPath } from 'url'; import { dirname } from 'path'; const require = createRequire(import.meta.url); const __filename = fileURLToPath(import.meta.url); const __dirname = dirname(__filename);`,
     },
   });
 
-  // Create a CJS wrapper that imports the ESM module
-  // This allows the deployment to use ./dist/index.cjs which then loads the ESM module
-  const cjsWrapper = `
-import('./index.mjs').catch(err => {
-  console.error('Failed to load application:', err);
-  process.exit(1);
-});
-`;
+  // Create a CJS wrapper that uses dynamic import to load the ESM module
+  // The deployment uses ./dist/index.cjs which loads the ESM module
+  const cjsWrapper = `(async () => { await import('./index.js'); })();`;
   await writeFile("dist/index.cjs", cjsWrapper);
   console.log("Created CJS wrapper for ESM module");
 }

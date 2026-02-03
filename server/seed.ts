@@ -119,6 +119,8 @@ export async function seedDatabase() {
     { name: "Barclays - Jamie", creditor: "Barclays", debtType: "credit_card", currentBalance: "1114.16", owner: "Jamie", isPaidOff: false },
     { name: "Old Navy", creditor: "Old Navy", debtType: "credit_card", currentBalance: "1100", minimumPayment: "40", dueDay: 1, owner: "Jamie", isPaidOff: false },
     { name: "Navy Federal Auto Loan", creditor: "Navy Federal", debtType: "auto_loan", currentBalance: "15512.01", minimumPayment: "300", owner: "Joint", isPaidOff: false, notes: "Lexus NX 2018" },
+    { name: "Student Loan - Kevin", creditor: "Department of Education", debtType: "student_loan", currentBalance: "149320.00", originalBalance: "149320.00", minimumPayment: "137", owner: "Kevin", isPaidOff: false, notes: "Imported from Excel (SC - Strawberry Cupcake)" },
+    { name: "Student Loan - Jamie", creditor: "Department of Education", debtType: "student_loan", currentBalance: "9498.91", originalBalance: "9498.91", minimumPayment: "0", owner: "Jamie", isPaidOff: false, notes: "Imported from Excel (HB - Honey Bunches)" },
   ];
   await db.insert(debts).values(debtsData);
 

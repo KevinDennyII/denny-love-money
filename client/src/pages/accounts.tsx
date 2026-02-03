@@ -16,6 +16,7 @@ import { formatCurrency } from "@/lib/formatters";
 import { Plus, Wallet, Building2, CreditCard, PiggyBank, TrendingUp, Landmark, Pencil, Trash2 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertAccountSchema, type Account, type InsertAccount } from "@shared/schema";
+import { OwnerBadge } from "@/components/owner-badge";
 import { z } from "zod";
 
 const accountFormSchema = insertAccountSchema.extend({
@@ -177,8 +178,8 @@ function EditAccountDialog({ account, onClose }: { account: Account; onClose: ()
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Kevin">Kevin</SelectItem>
-                      <SelectItem value="Jamie">Jamie</SelectItem>
+                      <SelectItem value="Kevin">HB (Kevin)</SelectItem>
+                      <SelectItem value="Jamie">SC (Jamie)</SelectItem>
                       <SelectItem value="Joint">Joint</SelectItem>
                     </SelectContent>
                   </Select>
@@ -287,9 +288,7 @@ function AccountCard({ account }: { account: Account }) {
           )}
           <div className="mt-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Badge variant={account.owner === 'Kevin' ? 'default' : account.owner === 'Jamie' ? 'secondary' : 'outline'}>
-                {account.owner}
-              </Badge>
+              <OwnerBadge owner={account.owner} variant={account.owner === 'Kevin' ? 'default' : account.owner === 'Jamie' ? 'secondary' : 'outline'} />
               {!account.isActive && (
                 <Badge variant="destructive">Inactive</Badge>
               )}
@@ -437,8 +436,8 @@ function AddAccountDialog() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Kevin">Kevin</SelectItem>
-                        <SelectItem value="Jamie">Jamie</SelectItem>
+                        <SelectItem value="Kevin">HB (Kevin)</SelectItem>
+                        <SelectItem value="Jamie">SC (Jamie)</SelectItem>
                         <SelectItem value="Joint">Joint</SelectItem>
                       </SelectContent>
                     </Select>

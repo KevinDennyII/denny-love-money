@@ -75,7 +75,7 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="members">Members</Label>
-                <p className="text-sm text-muted-foreground">Kevin & Jamie</p>
+                <p className="text-sm text-muted-foreground">HB & SC</p>
               </div>
             </div>
           </CardContent>

@@ -18,6 +18,7 @@ import { formatCurrency, getDebtPayoffProgress } from "@/lib/formatters";
 import { Plus, CreditCard, Landmark, ShoppingBag, Car, GraduationCap, CheckCircle2, Pencil } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertDebtSchema, type Debt, type InsertDebt } from "@shared/schema";
+import { OwnerBadge } from "@/components/owner-badge";
 import { z } from "zod";
 
 const debtFormSchema = insertDebtSchema.extend({
@@ -185,8 +186,8 @@ function EditDebtDialog({ debt, onClose }: { debt: Debt; onClose: () => void }) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Kevin">Kevin</SelectItem>
-                      <SelectItem value="Jamie">Jamie</SelectItem>
+                      <SelectItem value="Kevin">HB (Kevin)</SelectItem>
+                      <SelectItem value="Jamie">SC (Jamie)</SelectItem>
                       <SelectItem value="Joint">Joint</SelectItem>
                     </SelectContent>
                   </Select>
@@ -554,8 +555,8 @@ function AddDebtDialog() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Kevin">Kevin</SelectItem>
-                        <SelectItem value="Jamie">Jamie</SelectItem>
+                        <SelectItem value="Kevin">HB (Kevin)</SelectItem>
+                        <SelectItem value="Jamie">SC (Jamie)</SelectItem>
                         <SelectItem value="Joint">Joint</SelectItem>
                       </SelectContent>
                     </Select>
@@ -711,7 +712,7 @@ export default function Debts() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Kevin's Debt</CardDescription>
+            <CardDescription>HB's Debt</CardDescription>
             <CardTitle className="text-2xl text-red-500">{formatCurrency(kevinTotal)}</CardTitle>
           </CardHeader>
           <CardContent>
@@ -720,7 +721,7 @@ export default function Debts() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Jamie's Debt</CardDescription>
+            <CardDescription>SC's Debt</CardDescription>
             <CardTitle className="text-2xl text-red-500">{formatCurrency(jamieTotal)}</CardTitle>
           </CardHeader>
           <CardContent>

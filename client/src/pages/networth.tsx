@@ -16,6 +16,7 @@ import { formatCurrency } from "@/lib/formatters";
 import { Plus, TrendingUp, TrendingDown, Building, Car, Briefcase, PiggyBank, Coins, Home } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertAssetSchema, type Asset, type InsertAsset, type Debt } from "@shared/schema";
+import { OwnerBadge } from "@/components/owner-badge";
 import { z } from "zod";
 
 const assetFormSchema = insertAssetSchema.extend({
@@ -67,9 +68,7 @@ function AssetCard({ asset }: { asset: Asset }) {
         </div>
         <div className="mt-3 flex items-center gap-2">
           {asset.owner && (
-            <Badge variant={asset.owner === 'Kevin' ? 'default' : asset.owner === 'Jamie' ? 'secondary' : 'outline'}>
-              {asset.owner}
-            </Badge>
+            <OwnerBadge owner={asset.owner} variant={asset.owner === 'Kevin' ? 'default' : asset.owner === 'Jamie' ? 'secondary' : 'outline'} />
           )}
         </div>
         {asset.notes && (
@@ -204,8 +203,8 @@ function AddAssetDialog() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Kevin">Kevin</SelectItem>
-                      <SelectItem value="Jamie">Jamie</SelectItem>
+                      <SelectItem value="Kevin">HB (Kevin)</SelectItem>
+                      <SelectItem value="Jamie">SC (Jamie)</SelectItem>
                       <SelectItem value="Joint">Joint</SelectItem>
                     </SelectContent>
                   </Select>

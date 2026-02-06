@@ -1,6 +1,6 @@
 # Project Cleanup & Maintenance Guide
 
-This document outlines the scripts, processes, and coding standards for cleaning up and maintaining the **Denny Love Money** project.
+This document outlines the scripts, processes, and coding standards for cleaning up and maintaining the **Denny Monthly Finances** project.
 
 ## 🧹 Database Cleanup
 

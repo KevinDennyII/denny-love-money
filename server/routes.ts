@@ -29,6 +29,19 @@ export async function registerRoutes(
     return res.status(500).json({ error: "Internal server error" });
   };
 
+  // ==================== AUTH ====================
+  app.post("/api/login", (req, res) => {
+    const { passphrase } = req.body;
+    // Default passphrase is "love-money" if not set in environment
+    const correctPassphrase = process.env.AUTH_PASSPHRASE || "love-money";
+    
+    if (passphrase === correctPassphrase) {
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ error: "Invalid passphrase" });
+    }
+  });
+
   // ==================== ACCOUNTS ====================
   app.get("/api/accounts", async (req, res) => {
     try {

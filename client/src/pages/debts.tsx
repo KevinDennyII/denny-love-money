@@ -109,7 +109,14 @@ function EditDebtDialog({ debt, onClose }: { debt: Debt; onClose: () => void }) 
   });
 
   const onSubmit = (data: DebtFormValues) => {
-    updateMutation.mutate(data as InsertDebt);
+    // Sanitize empty strings to null for optional numeric fields
+    const sanitizedData = {
+      ...data,
+      originalBalance: data.originalBalance === "" ? null : data.originalBalance,
+      minimumPayment: data.minimumPayment === "" ? null : data.minimumPayment,
+      interestRate: data.interestRate === "" ? null : data.interestRate,
+    };
+    updateMutation.mutate(sanitizedData as unknown as InsertDebt);
   };
 
   return (
@@ -471,7 +478,14 @@ function AddDebtDialog() {
   });
 
   const onSubmit = (data: DebtFormValues) => {
-    mutation.mutate(data as InsertDebt);
+    // Sanitize empty strings to null for optional numeric fields
+    const sanitizedData = {
+      ...data,
+      originalBalance: data.originalBalance === "" ? null : data.originalBalance,
+      minimumPayment: data.minimumPayment === "" ? null : data.minimumPayment,
+      interestRate: data.interestRate === "" ? null : data.interestRate,
+    };
+    mutation.mutate(sanitizedData as unknown as InsertDebt);
   };
 
   return (

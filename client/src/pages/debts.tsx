@@ -10,12 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { formatCurrency, getDebtPayoffProgress } from "@/lib/formatters";
-import { Plus, CreditCard, Landmark, ShoppingBag, Car, GraduationCap, CheckCircle2, Pencil } from "lucide-react";
+import { Plus, CreditCard, Landmark, ShoppingBag, Car, GraduationCap, CheckCircle2, Pencil, ChevronDown } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertDebtSchema, type Debt, type InsertDebt } from "@shared/schema";
 import { OwnerBadge } from "@/components/owner-badge";
@@ -333,100 +334,113 @@ function EditDebtDialog({ debt, onClose }: { debt: Debt; onClose: () => void }) 
   );
 }
 
+function DebtCategory({ title, icon, debts }: { title: string, icon: React.ReactNode, debts: Debt[] }) {
+  const [isOpen, setIsOpen] = useState(true);
+
+  if (debts.length === 0) return null;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+              {icon}
+              {title}
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
+            </h2>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-4">
+        {debts.map((debt) => (
+          <DebtCard key={debt.id} debt={debt} />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function DebtCard({ debt }: { debt: Debt }) {
   const [editOpen, setEditOpen] = useState(false);
   const Icon = debtTypeIcons[debt.debtType] || CreditCard;
   const balance = parseFloat(debt.currentBalance as string);
   const original = debt.originalBalance ? parseFloat(debt.originalBalance as string) : balance;
   const progress = getDebtPayoffProgress(balance, original);
-  const paidAmount = original - balance;
   const minimumPayment = debt.minimumPayment ? parseFloat(debt.minimumPayment as string) : null;
 
   return (
     <>
-      <Card className={`hover-elevate ${debt.isPaidOff ? 'opacity-60' : ''}`} data-testid={`card-debt-${debt.id}`}>
-        <CardContent className="pt-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-md ${debt.isPaidOff ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'}`}>
-                {debt.isPaidOff ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                ) : (
-                  <Icon className="h-5 w-5 text-red-600 dark:text-red-400" />
-                )}
-              </div>
-              <div>
-                <h3 className="font-semibold">{debt.name}</h3>
-                <p className="text-sm text-muted-foreground">{debt.creditor}</p>
-              </div>
+      <div 
+        className={`group flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all ${debt.isPaidOff ? 'opacity-60 bg-muted/30' : ''}`}
+        data-testid={`card-debt-${debt.id}`}
+      >
+        {/* Left: Icon and Info */}
+        <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${debt.isPaidOff ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+            {debt.isPaidOff ? (
+              <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+            ) : (
+              <Icon className="h-6 w-6 text-red-600 dark:text-red-400" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-lg truncate">{debt.name}</h3>
+              <OwnerBadge owner={debt.owner} />
             </div>
-            <div className="text-right">
-              <p className={`text-lg font-bold ${debt.isPaidOff ? 'text-green-500 line-through' : 'text-red-500'}`}>
-                {formatCurrency(balance)}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{debt.creditor}</span>
+              {!debt.isPaidOff && (
+                <>
+                  <span>•</span>
+                  <span>{debtTypeLabels[debt.debtType]}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Middle: Progress (Hidden on mobile if needed, or stacked) */}
+        {!debt.isPaidOff && (
+          <div className="flex-1 w-full sm:px-8 mb-4 sm:mb-0">
+            <div className="flex justify-between text-xs mb-1.5">
+              <span className="text-muted-foreground">Payoff Progress</span>
+              <span className="font-medium">{progress.toFixed(0)}%</span>
+            </div>
+            <Progress value={progress} className="h-2.5 w-full" />
+            {debt.minimumPayment && (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Min Payment: <span className="font-medium">{formatCurrency(minimumPayment)}</span>
               </p>
-              <Badge variant={debt.isPaidOff ? "default" : "secondary"} className="mt-1">
-                {debt.isPaidOff ? "Paid Off" : debtTypeLabels[debt.debtType]}
-              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Right: Balance & Actions */}
+        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+          <div className="text-right">
+             <div className={`text-xl font-bold ${debt.isPaidOff ? 'text-green-500 line-through decoration-2' : 'text-red-500'}`}>
+              {formatCurrency(balance)}
             </div>
+            {debt.interestRate && parseFloat(debt.interestRate as string) > 0 && !debt.isPaidOff && (
+              <p className="text-xs text-muted-foreground">
+                {parseFloat(debt.interestRate as string)}% APR
+              </p>
+            )}
           </div>
           
-          {!debt.isPaidOff && (
-            <div className="mt-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Paid Off</span>
-                <span className="font-medium">
-                  {debt.originalBalance ? (
-                    <>{formatCurrency(paidAmount)} <span className="text-muted-foreground">({progress.toFixed(0)}%)</span></>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Set original balance to track</span>
-                  )}
-                </span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-          )}
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={debt.owner === 'Kevin' ? 'default' : 'secondary'}>
-                {debt.owner}
-              </Badge>
-              {minimumPayment && (
-                <Badge variant="outline">
-                  Min: {formatCurrency(minimumPayment)}
-                </Badge>
-              )}
-              {debt.dueDay && (
-                <Badge variant="outline">
-                  Due: {debt.dueDay}{debt.dueDay === 1 ? 'st' : debt.dueDay === 2 ? 'nd' : debt.dueDay === 3 ? 'rd' : 'th'}
-                </Badge>
-              )}
-              {debt.interestRate && parseFloat(debt.interestRate as string) > 0 && (
-                <Badge variant="outline">
-                  {parseFloat(debt.interestRate as string).toFixed(1)}% APR
-                </Badge>
-              )}
-            </div>
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              onClick={() => setEditOpen(true)}
-              data-testid={`button-edit-debt-${debt.id}`}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {debt.notes && (
-            <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{debt.notes}</p>
-          )}
-          {debt.lastUpdated && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Last updated: {new Date(debt.lastUpdated).toLocaleString()}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => setEditOpen(true)}
+            data-testid={`button-edit-debt-${debt.id}`}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <EditDebtDialog debt={debt} onClose={() => setEditOpen(false)} />
       </Dialog>
@@ -688,7 +702,14 @@ export default function Debts() {
   });
 
   const activeDebts = debts.filter(d => !d.isPaidOff);
-  const paidOffDebts = debts.filter(d => d.isPaidOff);
+  const paidOffDebts = debts
+    .filter(d => d.isPaidOff)
+    .sort((a, b) => {
+      const progA = getDebtPayoffProgress(a.currentBalance, a.originalBalance);
+      const progB = getDebtPayoffProgress(b.currentBalance, b.originalBalance);
+      return progB - progA;
+    });
+
   const totalDebt = activeDebts.reduce((sum, d) => sum + parseFloat(d.currentBalance as string), 0);
   const totalPaidOff = paidOffDebts.reduce((sum, d) => sum + parseFloat(d.currentBalance as string), 0);
 
@@ -698,9 +719,23 @@ export default function Debts() {
   const kevinTotal = kevinDebts.reduce((sum, d) => sum + parseFloat(d.currentBalance as string), 0);
   const jamieTotal = jamieDebts.reduce((sum, d) => sum + parseFloat(d.currentBalance as string), 0);
 
-  const creditCards = activeDebts.filter(d => d.debtType === 'credit_card');
-  const payLaters = activeDebts.filter(d => d.debtType === 'pay_later');
-  const loans = activeDebts.filter(d => d.debtType === 'auto_loan' || d.debtType === 'student_loan' || d.debtType === 'other');
+  const sortByProgress = (a: Debt, b: Debt) => {
+    const progA = getDebtPayoffProgress(a.currentBalance, a.originalBalance);
+    const progB = getDebtPayoffProgress(b.currentBalance, b.originalBalance);
+    return progB - progA;
+  };
+
+  const creditCards = activeDebts
+    .filter(d => d.debtType === 'credit_card')
+    .sort(sortByProgress);
+
+  const payLaters = activeDebts
+    .filter(d => d.debtType === 'pay_later')
+    .sort(sortByProgress);
+
+  const loans = activeDebts
+    .filter(d => d.debtType === 'auto_loan' || d.debtType === 'student_loan' || d.debtType === 'other')
+    .sort(sortByProgress);
 
   return (
     <div className="space-y-6">
@@ -754,78 +789,49 @@ export default function Debts() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-10 w-10 rounded-md" />
-                    <div>
-                      <Skeleton className="h-5 w-32" />
-                      <Skeleton className="h-4 w-24 mt-1" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-8 w-24" />
+            <div key={i} className="flex items-center justify-between p-4 rounded-lg border bg-card shadow-sm">
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-32" />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="hidden sm:block flex-1 px-8">
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-2 w-full" />
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            </div>
           ))}
         </div>
       ) : (
         <div className="space-y-6">
-          {creditCards.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Credit Cards
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {creditCards.map((debt) => (
-                  <DebtCard key={debt.id} debt={debt} />
-                ))}
-              </div>
-            </div>
-          )}
-          {payLaters.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5" />
-                Pay Later Services
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {payLaters.map((debt) => (
-                  <DebtCard key={debt.id} debt={debt} />
-                ))}
-              </div>
-            </div>
-          )}
-          {loans.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <Landmark className="h-5 w-5" />
-                Loans
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {loans.map((debt) => (
-                  <DebtCard key={debt.id} debt={debt} />
-                ))}
-              </div>
-            </div>
-          )}
-          {paidOffDebts.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                Paid Off
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {paidOffDebts.map((debt) => (
-                  <DebtCard key={debt.id} debt={debt} />
-                ))}
-              </div>
-            </div>
-          )}
+          <DebtCategory 
+            title="Credit Cards" 
+            icon={<CreditCard className="h-5 w-5" />} 
+            debts={creditCards} 
+          />
+          <DebtCategory 
+            title="Pay Later Services" 
+            icon={<ShoppingBag className="h-5 w-5" />} 
+            debts={payLaters} 
+          />
+          <DebtCategory 
+            title="Loans" 
+            icon={<Landmark className="h-5 w-5" />} 
+            debts={loans} 
+          />
+          <DebtCategory 
+            title="Paid Off" 
+            icon={<CheckCircle2 className="h-5 w-5 text-green-500" />} 
+            debts={paidOffDebts} 
+          />
           {debts.length === 0 && (
             <Card className="py-12">
               <CardContent className="text-center">

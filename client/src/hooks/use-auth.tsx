@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       localStorage.setItem("denny-money-auth", "true");
       setIsAuthenticated(true);
-      setLocation("/");
+      // setLocation("/") is handled by the component reacting to isAuthenticated change
       toast({
         title: "Welcome back!",
         description: "Access granted to the treasury.",

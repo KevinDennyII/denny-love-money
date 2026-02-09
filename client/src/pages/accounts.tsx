@@ -13,10 +13,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { formatCurrency } from "@/lib/formatters";
-import { Plus, Wallet, Building2, CreditCard, PiggyBank, TrendingUp, Landmark, Pencil, Trash2 } from "lucide-react";
+import { Plus, Wallet, Building2, CreditCard, PiggyBank, TrendingUp, Landmark, Pencil, Trash2, ChevronDown } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertAccountSchema, type Account, type InsertAccount } from "@shared/schema";
 import { OwnerBadge } from "@/components/owner-badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { z } from "zod";
 
 const accountFormSchema = insertAccountSchema.extend({
@@ -249,6 +250,33 @@ function EditAccountDialog({ account, onClose }: { account: Account; onClose: ()
   );
 }
 
+function AccountCategory({ title, icon, accounts }: { title: string, icon: React.ReactNode, accounts: Account[] }) {
+  const [isOpen, setIsOpen] = useState(true);
+
+  if (accounts.length === 0) return null;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+              {icon}
+              {title}
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
+            </h2>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-4">
+        {accounts.map((account) => (
+          <AccountCard key={account.id} account={account} />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function AccountCard({ account }: { account: Account }) {
   const [editOpen, setEditOpen] = useState(false);
   const Icon = accountTypeIcons[account.accountType] || Building2;
@@ -257,53 +285,57 @@ function AccountCard({ account }: { account: Account }) {
 
   return (
     <>
-      <Card className="hover-elevate" data-testid={`card-account-${account.id}`}>
-        <CardContent className="pt-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-                <Icon className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <h3 className="font-semibold">{account.name}</h3>
-                <p className="text-sm text-muted-foreground">{account.institution}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className={`text-lg font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
-                {formatCurrency(Math.abs(balance))}<span className="text-sm font-normal text-muted-foreground">/mo</span>
-              </p>
-              <Badge variant="secondary" className="mt-1">
-                {accountTypeLabels[account.accountType]}
-              </Badge>
-            </div>
+      <div 
+        className="group flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all"
+        data-testid={`card-account-${account.id}`}
+      >
+        {/* Left: Icon and Info */}
+        <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted">
+            <Icon className="h-6 w-6 text-muted-foreground" />
           </div>
-          {account.accountNumber && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              Account: ****{account.accountNumber.slice(-4)}
-            </p>
-          )}
-          {account.notes && (
-            <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{account.notes}</p>
-          )}
-          <div className="mt-3 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-lg truncate">{account.name}</h3>
               <OwnerBadge owner={account.owner} variant={account.owner === 'Kevin' ? 'default' : account.owner === 'Jamie' ? 'secondary' : 'outline'} />
               {!account.isActive && (
-                <Badge variant="destructive">Inactive</Badge>
+                <Badge variant="destructive" className="ml-2">Inactive</Badge>
               )}
             </div>
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              onClick={() => setEditOpen(true)}
-              data-testid={`button-edit-account-${account.id}`}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{account.institution}</span>
+              {account.accountNumber && (
+                <>
+                  <span>•</span>
+                  <span>****{account.accountNumber.slice(-4)}</span>
+                </>
+              )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Right: Balance & Actions */}
+        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+          <div className="text-right">
+             <div className={`text-xl font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
+              {formatCurrency(Math.abs(balance))}<span className="text-sm font-normal text-muted-foreground">/mo</span>
+            </div>
+            <Badge variant="outline" className="mt-1">
+                {accountTypeLabels[account.accountType]}
+            </Badge>
+          </div>
+          
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => setEditOpen(true)}
+            data-testid={`button-edit-account-${account.id}`}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <EditAccountDialog account={account} onClose={() => setEditOpen(false)} />
       </Dialog>
@@ -553,76 +585,48 @@ export default function Accounts() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-10 w-10 rounded-md" />
-                    <div>
-                      <Skeleton className="h-5 w-32" />
-                      <Skeleton className="h-4 w-24 mt-1" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-8 w-24" />
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center justify-between p-4 rounded-lg border">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div>
+                  <Skeleton className="h-5 w-48 mb-2" />
+                  <Skeleton className="h-4 w-32" />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <Skeleton className="h-8 w-32" />
+            </div>
           ))}
         </div>
       ) : (
         <div className="space-y-6">
-          {checkingAccounts.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-3">Checking Accounts</h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {checkingAccounts.map((account) => (
-                  <AccountCard key={account.id} account={account} />
-                ))}
-              </div>
-            </div>
-          )}
-          {savingsAccounts.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-3">Savings Accounts</h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {savingsAccounts.map((account) => (
-                  <AccountCard key={account.id} account={account} />
-                ))}
-              </div>
-            </div>
-          )}
-          {creditAccounts.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-3">Credit Cards</h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {creditAccounts.map((account) => (
-                  <AccountCard key={account.id} account={account} />
-                ))}
-              </div>
-            </div>
-          )}
-          {investmentAccounts.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-3">Investment Accounts</h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {investmentAccounts.map((account) => (
-                  <AccountCard key={account.id} account={account} />
-                ))}
-              </div>
-            </div>
-          )}
-          {loanAccounts.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-3">Loans</h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {loanAccounts.map((account) => (
-                  <AccountCard key={account.id} account={account} />
-                ))}
-              </div>
-            </div>
-          )}
+          <AccountCategory 
+            title="Checking Accounts" 
+            icon={<Building2 className="h-5 w-5" />}
+            accounts={checkingAccounts} 
+          />
+          <AccountCategory 
+            title="Savings Accounts" 
+            icon={<PiggyBank className="h-5 w-5" />}
+            accounts={savingsAccounts} 
+          />
+          <AccountCategory 
+            title="Credit Cards" 
+            icon={<CreditCard className="h-5 w-5" />}
+            accounts={creditAccounts} 
+          />
+          <AccountCategory 
+            title="Investment Accounts" 
+            icon={<TrendingUp className="h-5 w-5" />}
+            accounts={investmentAccounts} 
+          />
+          <AccountCategory 
+            title="Loans" 
+            icon={<Landmark className="h-5 w-5" />}
+            accounts={loanAccounts} 
+          />
+          
           {accounts.length === 0 && (
             <Card className="py-12">
               <CardContent className="text-center">

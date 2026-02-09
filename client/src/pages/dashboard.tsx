@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { formatCurrency, formatCompactCurrency } from "@/lib/formatters";
-import { TrendingUp, TrendingDown, Wallet, CreditCard, PiggyBank, Receipt } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, CreditCard, PiggyBank, Receipt, ChevronDown, PieChart, Landmark } from "lucide-react";
 import type { Account, Expense, Debt, Income, SavingsAllocation, Asset } from "@shared/schema";
 
 interface DashboardStats {
@@ -55,6 +58,29 @@ function StatCard({
   );
 }
 
+function DashboardSection({ title, icon: Icon, children, defaultOpen = true }: { title: string, icon: any, children: React.ReactNode, defaultOpen?: boolean }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+              <Icon className="h-5 w-5 text-primary" />
+              {title}
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
+            </h2>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-4">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function AccountsList({ accounts, isLoading }: { accounts: Account[]; isLoading: boolean }) {
   if (isLoading) {
     return (
@@ -75,32 +101,32 @@ function AccountsList({ accounts, isLoading }: { accounts: Account[]; isLoading:
   return (
     <div className="space-y-4">
       {checkingAccounts.length > 0 && (
-        <div>
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Checking</h4>
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Checking</h4>
           <div className="space-y-2">
             {checkingAccounts.map((account) => (
-              <div key={account.id} className="flex items-center justify-between" data-testid={`account-item-${account.id}`}>
+              <div key={account.id} className="flex items-center justify-between p-3 rounded-lg border bg-card text-card-foreground shadow-sm" data-testid={`account-item-${account.id}`}>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{account.name}</span>
                   <span className="text-xs text-muted-foreground">{account.institution}</span>
                 </div>
-                <span className="text-sm font-semibold">{formatCurrency(account.currentBalance)}<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
+                <span className="text-sm font-semibold">{formatCurrency(account.currentBalance)}</span>
               </div>
             ))}
           </div>
         </div>
       )}
       {savingsAccounts.length > 0 && (
-        <div>
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Savings</h4>
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Savings</h4>
           <div className="space-y-2">
             {savingsAccounts.map((account) => (
-              <div key={account.id} className="flex items-center justify-between" data-testid={`account-item-${account.id}`}>
+              <div key={account.id} className="flex items-center justify-between p-3 rounded-lg border bg-card text-card-foreground shadow-sm" data-testid={`account-item-${account.id}`}>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{account.name}</span>
                   <span className="text-xs text-muted-foreground">{account.institution}</span>
                 </div>
-                <span className="text-sm font-semibold">{formatCurrency(account.currentBalance)}<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
+                <span className="text-sm font-semibold">{formatCurrency(account.currentBalance)}</span>
               </div>
             ))}
           </div>
@@ -130,14 +156,14 @@ function DebtProgressCard({ debts, isLoading }: { debts: Debt[]; isLoading: bool
     .slice(0, 5);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {topDebts.map((debt) => {
         const balance = parseFloat(debt.currentBalance as string);
         const original = debt.originalBalance ? parseFloat(debt.originalBalance as string) : balance * 1.5;
         const progress = Math.min(100, ((original - balance) / original) * 100);
         
         return (
-          <div key={debt.id} className="space-y-2" data-testid={`debt-progress-${debt.id}`}>
+          <div key={debt.id} className="flex flex-col gap-2 p-3 rounded-lg border bg-card text-card-foreground shadow-sm" data-testid={`debt-progress-${debt.id}`}>
             <div className="flex justify-between text-sm">
               <span className="font-medium truncate flex-1 mr-2">{debt.name}</span>
               <span className="text-muted-foreground">{formatCurrency(balance)}</span>
@@ -268,63 +294,49 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="md:row-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <CardTitle className="text-lg">Net Worth</CardTitle>
-                <CardDescription>Assets minus liabilities</CardDescription>
+      <div className="space-y-6">
+        <Collapsible defaultOpen className="space-y-2">
+          <div className="flex items-center justify-between">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+                <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+                  <Landmark className="h-5 w-5 text-primary" />
+                  Net Worth
+                  <span className={`text-muted-foreground font-normal text-sm ml-2 ${netWorth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    ({formatCurrency(netWorth)})
+                  </span>
+                  <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto group-data-[state=open]:rotate-180" />
+                </h2>
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="flex justify-between items-center p-4 rounded-lg border bg-card text-card-foreground shadow-sm">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                  <span className="font-medium">Total Assets</span>
+                </div>
+                <span className="font-bold text-green-500">{formatCurrency(totalAssets)}</span>
               </div>
-              {netWorth >= 0 ? (
-                <TrendingUp className="h-5 w-5 text-green-500" />
-              ) : (
-                <TrendingDown className="h-5 w-5 text-red-500" />
-              )}
+              <div className="flex justify-between items-center p-4 rounded-lg border bg-card text-card-foreground shadow-sm">
+                <div className="flex items-center gap-2">
+                  <TrendingDown className="h-4 w-4 text-red-500" />
+                  <span className="font-medium">Total Debts</span>
+                </div>
+                <span className="font-bold text-red-500">-{formatCurrency(totalDebt)}</span>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-12 w-32" />
-            ) : (
-              <>
-                <div className={`text-4xl font-bold ${netWorth >= 0 ? 'text-green-500' : 'text-red-500'}`} data-testid="text-networth">
-                  {formatCurrency(netWorth)}
-                </div>
-                <div className="mt-6 space-y-4">
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-muted-foreground">Total Assets</span>
-                    <span className="font-semibold text-green-500">{formatCurrency(totalAssets)}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-muted-foreground">Total Debts</span>
-                    <span className="font-semibold text-red-500">-{formatCurrency(totalDebt)}</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+          </CollapsibleContent>
+        </Collapsible>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Monthly Allocations</CardTitle>
-            <CardDescription>Income allocated to each account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AccountsList accounts={accounts} isLoading={accountsLoading} />
-          </CardContent>
-        </Card>
+        <DashboardSection title="Monthly Allocations" icon={PieChart}>
+          <AccountsList accounts={accounts} isLoading={accountsLoading} />
+        </DashboardSection>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Debt Payoff Progress</CardTitle>
-            <CardDescription>Top 5 active debts</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DebtProgressCard debts={debts} isLoading={debtsLoading} />
-          </CardContent>
-        </Card>
+        <DashboardSection title="Debt Payoff Progress" icon={CreditCard}>
+          <DebtProgressCard debts={debts} isLoading={debtsLoading} />
+        </DashboardSection>
       </div>
     </div>
   );

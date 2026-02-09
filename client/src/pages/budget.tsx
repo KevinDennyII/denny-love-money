@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { formatCurrency } from "@/lib/formatters";
-import { Plus, Receipt, Zap, Home, Car, Utensils, ShoppingBag, Heart, Smartphone, Pencil } from "lucide-react";
+import { Plus, Receipt, Zap, Home, Car, Utensils, ShoppingBag, Heart, Smartphone, Pencil, ChevronDown } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertExpenseSchema, type Expense, type InsertExpense, type Income } from "@shared/schema";
 import { z } from "zod";
@@ -530,13 +531,13 @@ export default function Budget() {
   const otherExpenses = activeExpenses.filter(e => !categorizedIds.has(e.id));
 
   const categories = [
-    { name: "Housing", icon: Home, expenses: housingExpenses, color: "bg-blue-500" },
-    { name: "Utilities", icon: Zap, expenses: utilityExpenses, color: "bg-yellow-500" },
-    { name: "Subscriptions", icon: Smartphone, expenses: subscriptionExpenses, color: "bg-purple-500" },
-    { name: "Food & Dining", icon: Utensils, expenses: foodExpenses, color: "bg-orange-500" },
-    { name: "Transportation", icon: Car, expenses: transportExpenses, color: "bg-green-500" },
-    { name: "Personal Care", icon: Heart, expenses: personalExpenses, color: "bg-pink-500" },
-    { name: "Other", icon: Receipt, expenses: otherExpenses, color: "bg-gray-500" },
+    { name: "Housing", icon: Home, expenses: housingExpenses, color: "text-blue-500" },
+    { name: "Utilities", icon: Zap, expenses: utilityExpenses, color: "text-yellow-500" },
+    { name: "Subscriptions", icon: Smartphone, expenses: subscriptionExpenses, color: "text-purple-500" },
+    { name: "Food & Dining", icon: Utensils, expenses: foodExpenses, color: "text-orange-500" },
+    { name: "Transportation", icon: Car, expenses: transportExpenses, color: "text-green-500" },
+    { name: "Personal Care", icon: Heart, expenses: personalExpenses, color: "text-pink-500" },
+    { name: "Other", icon: Receipt, expenses: otherExpenses, color: "text-gray-500" },
   ].filter(c => c.expenses.length > 0);
 
   return (
@@ -581,56 +582,31 @@ export default function Budget() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3].map((j) => (
-                    <div key={j} className="flex justify-between">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-16" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+             <div key={i} className="flex items-center justify-between p-4 rounded-lg border">
+               <div className="flex items-center gap-4">
+                 <Skeleton className="h-12 w-12 rounded-full" />
+                 <div>
+                   <Skeleton className="h-5 w-48 mb-2" />
+                   <Skeleton className="h-4 w-32" />
+                 </div>
+               </div>
+               <Skeleton className="h-8 w-32" />
+             </div>
+           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {categories.map((category) => {
-            const categoryTotal = category.expenses.reduce((sum, e) => sum + parseFloat(e.budgetedAmount as string), 0);
-            const Icon = category.icon;
-            
-            return (
-              <Card key={category.name}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-md ${category.color}`}>
-                        <Icon className="h-4 w-4 text-white" />
-                      </div>
-                      <CardTitle className="text-lg">{category.name}</CardTitle>
-                    </div>
-                    <span className="font-bold">{formatCurrency(categoryTotal)}</span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="divide-y divide-border">
-                    {category.expenses.map((expense) => (
-                      <ExpenseCard key={expense.id} expense={expense} totalBudget={totalBudget} />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="space-y-6">
+          {categories.map((category) => (
+            <BudgetCategory 
+              key={category.name} 
+              category={category} 
+              totalBudget={totalBudget} 
+            />
+          ))}
           {categories.length === 0 && (
-            <Card className="md:col-span-2 py-12">
+            <Card className="py-12">
               <CardContent className="text-center">
                 <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No budget items yet</h3>
@@ -642,5 +618,35 @@ export default function Budget() {
         </div>
       )}
     </div>
+  );
+}
+
+function BudgetCategory({ category, totalBudget }: { category: any, totalBudget: number }) {
+  const [isOpen, setIsOpen] = useState(true);
+  const categoryTotal = category.expenses.reduce((sum: number, e: Expense) => sum + parseFloat(e.budgetedAmount as string), 0);
+  const Icon = category.icon;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+              <Icon className={`h-5 w-5 ${category.color}`} />
+              {category.name}
+              <span className="text-muted-foreground font-normal text-sm ml-2">
+                ({formatCurrency(categoryTotal)})
+              </span>
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
+            </h2>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-1 pl-4 border-l-2 border-muted ml-2">
+        {category.expenses.map((expense: Expense) => (
+          <ExpenseCard key={expense.id} expense={expense} totalBudget={totalBudget} />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

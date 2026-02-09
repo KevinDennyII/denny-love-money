@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,7 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { formatCurrency } from "@/lib/formatters";
-import { Plus, TrendingUp, TrendingDown, Building, Car, Briefcase, PiggyBank, Coins, Home } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Building, Car, Briefcase, PiggyBank, Coins, Home, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertAssetSchema, type Asset, type InsertAsset, type Debt } from "@shared/schema";
 import { OwnerBadge } from "@/components/owner-badge";
@@ -48,34 +49,100 @@ function AssetCard({ asset }: { asset: Asset }) {
   const value = parseFloat(asset.value as string);
 
   return (
-    <Card className="hover-elevate" data-testid={`card-asset-${asset.id}`}>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-green-100 dark:bg-green-900">
-              <Icon className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold">{asset.name}</h3>
-              <Badge variant="secondary" className="mt-1">
-                {assetTypeLabels[asset.assetType]}
-              </Badge>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-lg font-bold text-green-500">{formatCurrency(value)}</p>
+    <div className="flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all" data-testid={`card-asset-${asset.id}`}>
+      <div className="flex items-center gap-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+          <Icon className="h-5 w-5 text-green-600 dark:text-green-400" />
+        </div>
+        <div>
+          <h3 className="font-semibold">{asset.name}</h3>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="outline" className="text-xs font-normal">
+              {assetTypeLabels[asset.assetType]}
+            </Badge>
+            {asset.owner && (
+              <OwnerBadge owner={asset.owner} variant={asset.owner === 'Kevin' ? 'default' : asset.owner === 'Jamie' ? 'secondary' : 'outline'} />
+            )}
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-2">
-          {asset.owner && (
-            <OwnerBadge owner={asset.owner} variant={asset.owner === 'Kevin' ? 'default' : asset.owner === 'Jamie' ? 'secondary' : 'outline'} />
-          )}
-        </div>
+      </div>
+      <div className="text-right">
+        <p className="text-lg font-bold text-green-500">{formatCurrency(value)}</p>
         {asset.notes && (
-          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{asset.notes}</p>
+          <p className="text-xs text-muted-foreground max-w-[200px] truncate">{asset.notes}</p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
+  );
+}
+
+function AssetCategory({ title, icon: Icon, assets }: { title: string, icon: any, assets: Asset[] }) {
+  const [isOpen, setIsOpen] = useState(true);
+  
+  if (assets.length === 0) return null;
+
+  const total = assets.reduce((sum, a) => sum + parseFloat(a.value as string), 0);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+              <Icon className="h-5 w-5 text-muted-foreground" />
+              {title}
+              <span className="text-muted-foreground font-normal text-sm ml-2">
+                ({formatCurrency(total)})
+              </span>
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
+            </h2>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-2">
+        {assets.map((asset) => (
+          <AssetCard key={asset.id} asset={asset} />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function LiabilityCategory({ title, icon: Icon, debts }: { title: string, icon: any, debts: Debt[] }) {
+  const [isOpen, setIsOpen] = useState(true);
+  
+  if (debts.length === 0) return null;
+
+  const total = debts.reduce((sum, d) => sum + parseFloat(d.currentBalance as string), 0);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+              <Icon className="h-5 w-5 text-red-500" />
+              {title}
+              <span className="text-muted-foreground font-normal text-sm ml-2">
+                ({formatCurrency(total)})
+              </span>
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
+            </h2>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-2">
+        {debts.map((debt) => (
+          <div key={debt.id} className="flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all" data-testid={`liability-${debt.id}`}>
+            <div>
+              <p className="font-medium">{debt.name}</p>
+              <p className="text-sm text-muted-foreground">{debt.creditor}</p>
+            </div>
+            <p className="font-bold text-red-500">{formatCurrency(debt.currentBalance)}</p>
+          </div>
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -337,91 +404,35 @@ export default function NetWorth() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-24" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-24" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        <div className="space-y-4">
+          <Skeleton className="h-40 w-full" />
+          <div className="grid gap-4 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+             <div className="space-y-4">
+               {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+             </div>
+             <div className="space-y-4">
+               {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+             </div>
+          </div>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-500" />
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
+              <TrendingUp className="h-6 w-6 text-green-500" />
               Assets
             </h2>
             {assets.length > 0 ? (
               <div className="space-y-4">
-                {retirementAssets.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Retirement Accounts</h3>
-                    <div className="grid gap-3">
-                      {retirementAssets.map((asset) => (
-                        <AssetCard key={asset.id} asset={asset} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {investmentAssets.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Investments</h3>
-                    <div className="grid gap-3">
-                      {investmentAssets.map((asset) => (
-                        <AssetCard key={asset.id} asset={asset} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {vehicleAssets.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Vehicles</h3>
-                    <div className="grid gap-3">
-                      {vehicleAssets.map((asset) => (
-                        <AssetCard key={asset.id} asset={asset} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {cashAssets.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Cash</h3>
-                    <div className="grid gap-3">
-                      {cashAssets.map((asset) => (
-                        <AssetCard key={asset.id} asset={asset} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {(propertyAssets.length > 0 || otherAssets.length > 0) && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Other Assets</h3>
-                    <div className="grid gap-3">
-                      {[...propertyAssets, ...otherAssets].map((asset) => (
-                        <AssetCard key={asset.id} asset={asset} />
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <AssetCategory title="Retirement Accounts" icon={Briefcase} assets={retirementAssets} />
+                <AssetCategory title="Investments" icon={TrendingUp} assets={investmentAssets} />
+                <AssetCategory title="Vehicles" icon={Car} assets={vehicleAssets} />
+                <AssetCategory title="Property" icon={Home} assets={propertyAssets} />
+                <AssetCategory title="Cash" icon={Coins} assets={cashAssets} />
+                <AssetCategory title="Other Assets" icon={Building} assets={otherAssets} />
               </div>
             ) : (
               <Card className="py-8">
@@ -433,27 +444,13 @@ export default function NetWorth() {
             )}
           </div>
 
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-red-500" />
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
+              <TrendingDown className="h-6 w-6 text-red-500" />
               Liabilities
             </h2>
             {activeDebts.length > 0 ? (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    {activeDebts.map((debt) => (
-                      <div key={debt.id} className="flex items-center justify-between py-2 border-b border-border last:border-0" data-testid={`liability-${debt.id}`}>
-                        <div>
-                          <p className="font-medium">{debt.name}</p>
-                          <p className="text-sm text-muted-foreground">{debt.creditor}</p>
-                        </div>
-                        <p className="font-bold text-red-500">{formatCurrency(debt.currentBalance)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <LiabilityCategory title="Active Debts" icon={Building} debts={activeDebts} />
             ) : (
               <Card className="py-8">
                 <CardContent className="text-center">

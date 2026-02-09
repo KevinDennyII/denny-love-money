@@ -13,9 +13,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { formatCurrency } from "@/lib/formatters";
-import { Plus, PiggyBank, Wallet, Pencil } from "lucide-react";
+import { Plus, PiggyBank, Wallet, Pencil, ChevronDown } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertSavingsAllocationSchema, insertIncomeSchema, type SavingsAllocation, type InsertSavingsAllocation, type Income, type InsertIncome, type Account } from "@shared/schema";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { z } from "zod";
 
 const savingsFormSchema = insertSavingsAllocationSchema.extend({
@@ -360,50 +361,124 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
   );
 }
 
+function SavingsCategory({ title, icon, allocations, accounts, getAccount }: { 
+  title: string; 
+  icon: React.ReactNode; 
+  allocations: SavingsAllocation[]; 
+  accounts: Account[];
+  getAccount: (id: string | null | undefined) => Account | undefined;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
+
+  if (allocations.length === 0) return null;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+              {icon}
+              {title}
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
+            </h2>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-4">
+        {allocations.map((allocation) => (
+          <SavingsCard 
+            key={allocation.id} 
+            allocation={allocation} 
+            account={getAccount(allocation.accountId)}
+            accounts={accounts}
+          />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function IncomeCategory({ title, icon, incomes, accounts, getAccount }: { 
+  title: string; 
+  icon: React.ReactNode; 
+  incomes: Income[]; 
+  accounts: Account[];
+  getAccount: (id: string | null | undefined) => Account | undefined;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
+
+  if (incomes.length === 0) return null;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+              {icon}
+              {title}
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
+            </h2>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-4">
+        {incomes.map((income) => (
+          <IncomeCard 
+            key={income.id} 
+            income={income} 
+            account={getAccount(income.accountId)}
+            accounts={accounts}
+          />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function SavingsCard({ allocation, account, accounts }: { allocation: SavingsAllocation; account?: Account; accounts: Account[] }) {
   const [editOpen, setEditOpen] = useState(false);
   const amount = parseFloat(allocation.amount as string);
 
   return (
     <>
-      <Card className="hover-elevate" data-testid={`card-savings-${allocation.id}`}>
-        <CardContent className="pt-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-green-100 dark:bg-green-900">
-                <PiggyBank className="h-5 w-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold">{allocation.name}</h3>
-                {account && (
-                  <p className="text-sm text-muted-foreground">{account.institution}</p>
-                )}
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-bold text-green-500">{formatCurrency(amount)}</p>
-              <p className="text-xs text-muted-foreground">per month</p>
-            </div>
+      <div 
+        className="group flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all"
+        data-testid={`card-savings-${allocation.id}`}
+      >
+        <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+            <PiggyBank className="h-6 w-6 text-green-600 dark:text-green-400" />
           </div>
-          {allocation.notes && (
-            <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{allocation.notes}</p>
-          )}
-          <div className="mt-3 flex items-center justify-between gap-2">
-            {!allocation.isActive && (
-              <Badge variant="secondary">Inactive</Badge>
+          <div>
+            <h3 className="font-semibold text-lg">{allocation.name}</h3>
+            {account && (
+              <p className="text-sm text-muted-foreground">{account.institution}</p>
             )}
-            <div className="flex-1" />
-            <Button 
-              size="icon" 
-              variant="ghost"
-              onClick={() => setEditOpen(true)}
-              data-testid={`button-edit-savings-${allocation.id}`}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+            {!allocation.isActive && (
+              <Badge variant="destructive" className="mt-1">Inactive</Badge>
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+          <div className="text-right">
+            <p className="text-xl font-bold text-green-500">{formatCurrency(amount)}</p>
+            <p className="text-xs text-muted-foreground">per month</p>
+          </div>
+          
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => setEditOpen(true)}
+            data-testid={`button-edit-savings-${allocation.id}`}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <EditSavingsDialog allocation={allocation} accounts={accounts} onClose={() => setEditOpen(false)} />
       </Dialog>
@@ -417,40 +492,42 @@ function IncomeCard({ income, account, accounts }: { income: Income; account?: A
 
   return (
     <>
-      <Card className="hover-elevate" data-testid={`card-income-${income.id}`}>
-        <CardContent className="pt-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-900">
-                <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold">{income.name}</h3>
-                {account && (
-                  <p className="text-sm text-muted-foreground">{account.institution}</p>
-                )}
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-bold text-blue-500">{formatCurrency(amount)}</p>
-              <Badge variant="outline" className="mt-1">{income.frequency}</Badge>
-            </div>
+      <div 
+        className="group flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all"
+        data-testid={`card-income-${income.id}`}
+      >
+        <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
+            <Wallet className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
-          {income.notes && (
-            <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{income.notes}</p>
-          )}
-          <div className="mt-3 flex items-center justify-end gap-2">
-            <Button 
-              size="icon" 
-              variant="ghost"
-              onClick={() => setEditOpen(true)}
-              data-testid={`button-edit-income-${income.id}`}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+          <div>
+            <h3 className="font-semibold text-lg">{income.name}</h3>
+            {account && (
+              <p className="text-sm text-muted-foreground">{account.institution}</p>
+            )}
+            {!income.isActive && (
+              <Badge variant="destructive" className="mt-1">Inactive</Badge>
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+          <div className="text-right">
+            <p className="text-xl font-bold text-blue-500">{formatCurrency(amount)}</p>
+            <Badge variant="outline" className="mt-1">{income.frequency}</Badge>
+          </div>
+          
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => setEditOpen(true)}
+            data-testid={`button-edit-income-${income.id}`}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <EditIncomeDialog income={income} accounts={accounts} onClose={() => setEditOpen(false)} />
       </Dialog>
@@ -829,68 +906,53 @@ export default function Savings() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="pt-6">
-                <Skeleton className="h-20 w-full" />
-              </CardContent>
-            </Card>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center justify-between p-4 rounded-lg border">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div>
+                  <Skeleton className="h-5 w-48 mb-2" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-32" />
+            </div>
           ))}
         </div>
       ) : (
         <div className="space-y-6">
-          <div>
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-blue-500" />
-              Income Sources
-            </h2>
-            {activeIncomes.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {activeIncomes.map((income) => (
-                  <IncomeCard 
-                    key={income.id} 
-                    income={income} 
-                    account={getAccountForId(income.accountId)}
-                    accounts={accounts}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card className="py-8">
-                <CardContent className="text-center">
-                  <Wallet className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">No income sources added yet</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          <IncomeCategory 
+            title="Income Sources" 
+            icon={<Wallet className="h-5 w-5" />}
+            incomes={activeIncomes}
+            accounts={accounts}
+            getAccount={getAccountForId}
+          />
+          {activeIncomes.length === 0 && (
+            <Card className="py-8">
+              <CardContent className="text-center">
+                <Wallet className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">No income sources added yet</p>
+              </CardContent>
+            </Card>
+          )}
 
-          <div>
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <PiggyBank className="h-5 w-5 text-green-500" />
-              Savings Allocations
-            </h2>
-            {activeSavings.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {activeSavings.map((allocation) => (
-                  <SavingsCard 
-                    key={allocation.id} 
-                    allocation={allocation} 
-                    account={getAccountForId(allocation.accountId)}
-                    accounts={accounts}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card className="py-8">
-                <CardContent className="text-center">
-                  <PiggyBank className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">No savings allocations added yet</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          <SavingsCategory 
+            title="Savings Allocations" 
+            icon={<PiggyBank className="h-5 w-5" />}
+            allocations={activeSavings}
+            accounts={accounts}
+            getAccount={getAccountForId}
+          />
+          {activeSavings.length === 0 && (
+            <Card className="py-8">
+              <CardContent className="text-center">
+                <PiggyBank className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">No savings allocations added yet</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
     </div>

@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/formatters";
-import { CheckCircle2, ChevronDown } from "lucide-react";
+import { CheckCircle2, ChevronDown, Stethoscope, Clock, AlertCircle } from "lucide-react";
 import { type MedicalBill, type HsaPayback } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -12,6 +14,102 @@ import { MedicalBillCard } from "@/components/medical/medical-bill-card";
 import { HsaPaybackCard } from "@/components/medical/hsa-payback-card";
 import { AddMedicalBillDialog } from "@/components/medical/add-medical-bill-dialog";
 import { AddHsaDialog } from "@/components/medical/add-hsa-dialog";
+
+function MedicalBillCategory({ title, bills, defaultOpen }: { title: string, bills: MedicalBill[], defaultOpen: boolean }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  if (bills.length === 0) return null;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+              {title === "Active Bills" ? <Stethoscope className="h-5 w-5 text-red-500" /> : <CheckCircle2 className="h-5 w-5 text-green-500" />}
+              {title}
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
+            </h2>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-4">
+        <AnimatePresence>
+          {bills.map((bill) => (
+            <motion.div
+              key={bill.id}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              layout
+            >
+              <MedicalBillCard bill={bill} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function HsaCategory({ title, paybacks, defaultOpen, type }: { title: string, paybacks: HsaPayback[], defaultOpen: boolean, type: 'pending' | 'paid' }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  if (paybacks.length === 0) return null;
+
+  const total = paybacks.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+
+  // Group by year if pending
+  const paybacksByYear = type === 'pending' ? paybacks.reduce((acc, p) => {
+    const year = p.year;
+    if (!acc[year]) acc[year] = [];
+    acc[year].push(p);
+    return acc;
+  }, {} as Record<number, HsaPayback[]>) : null;
+
+  const sortedYears = paybacksByYear ? Object.keys(paybacksByYear).map(Number).sort((a, b) => a - b) : [];
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
+            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
+              {type === 'pending' ? <Clock className="h-5 w-5 text-orange-500" /> : <CheckCircle2 className="h-5 w-5 text-green-500" />}
+              {title}
+              <span className="text-muted-foreground font-normal text-sm ml-2">
+                ({formatCurrency(total)})
+              </span>
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
+            </h2>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-2 pl-4 border-l-2 border-muted ml-2">
+        {type === 'pending' && paybacksByYear ? (
+           <div className="space-y-4">
+             {sortedYears.map(year => (
+               <div key={year} className="space-y-2">
+                 <h3 className="text-sm font-medium text-muted-foreground pl-2">{year}</h3>
+                 <div className="space-y-2">
+                   {paybacksByYear[year].map(payback => (
+                     <HsaPaybackCard key={payback.id} payback={payback} />
+                   ))}
+                 </div>
+               </div>
+             ))}
+           </div>
+        ) : (
+          <div className="space-y-2">
+            {paybacks.map(payback => (
+              <HsaPaybackCard key={payback.id} payback={payback} />
+            ))}
+          </div>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 export default function Medical() {
   const { data: medicalBills = [], isLoading: billsLoading } = useQuery<MedicalBill[]>({
@@ -103,31 +201,29 @@ export default function Medical() {
         
         <TabsContent value="medical" className="space-y-6 mt-6">
           {billsLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-40 w-full" />
-              <Skeleton className="h-40 w-full" />
-            </div>
+             <div className="space-y-4">
+               {[1, 2, 3].map((i) => (
+                 <div key={i} className="flex items-center justify-between p-4 rounded-lg border">
+                   <div className="flex items-center gap-4">
+                     <Skeleton className="h-12 w-12 rounded-full" />
+                     <div>
+                       <Skeleton className="h-5 w-48 mb-2" />
+                       <Skeleton className="h-4 w-32" />
+                     </div>
+                   </div>
+                   <Skeleton className="h-8 w-32" />
+                 </div>
+               ))}
+             </div>
           ) : (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Active Bills</h2>
-                {activeBills.length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <AnimatePresence>
-                      {activeBills.map((bill) => (
-                        <motion.div
-                          key={bill.id}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          layout
-                        >
-                          <MedicalBillCard bill={bill} />
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                ) : (
+              <MedicalBillCategory 
+                title="Active Bills" 
+                bills={activeBills} 
+                defaultOpen={true}
+              />
+
+              {activeBills.length === 0 && (
                   <Card>
                     <CardContent className="flex flex-col items-center justify-center py-10 text-center">
                       <CheckCircle2 className="h-10 w-10 text-green-500 mb-4" />
@@ -135,18 +231,14 @@ export default function Medical() {
                       <p className="text-muted-foreground">Great job! You have no outstanding medical debt.</p>
                     </CardContent>
                   </Card>
-                )}
-              </div>
+              )}
 
               {paidBills.length > 0 && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-4 text-muted-foreground">Paid Off</h2>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 opacity-80">
-                    {paidBills.map((bill) => (
-                      <MedicalBillCard key={bill.id} bill={bill} />
-                    ))}
-                  </div>
-                </div>
+                 <MedicalBillCategory 
+                  title="Paid Off" 
+                  bills={paidBills} 
+                  defaultOpen={false}
+                />
               )}
             </div>
           )}
@@ -160,79 +252,30 @@ export default function Medical() {
               <Skeleton className="h-20 w-full" />
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Pending Reimbursement</CardTitle>
-                  <CardDescription>{formatCurrency(totalHsaPending)} to claim</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {unpaidHsa.length > 0 ? (
-                    <div className="space-y-6">
-                      <AnimatePresence initial={false}>
-                        {sortedUnpaidYears.map((year) => (
-                          <Collapsible key={year} defaultOpen className="space-y-2">
-                            <div className="sticky top-0 bg-card z-10 pt-2 pb-1 border-b">
-                              <CollapsibleTrigger className="flex items-center w-full justify-between hover:bg-muted/50 p-1 rounded group">
-                                <h3 className="font-semibold text-sm text-muted-foreground">{year}</h3>
-                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                              </CollapsibleTrigger>
-                            </div>
-                            <CollapsibleContent>
-                              <div className="divide-y divide-border">
-                                {unpaidHsaByYear[year].map((payback) => (
-                                  <motion.div
-                                    key={payback.id}
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                  >
-                                    <HsaPaybackCard payback={payback} />
-                                  </motion.div>
-                                ))}
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">No pending reimbursements</p>
-                  )}
-                </CardContent>
-              </Card>
+            <div className="space-y-6">
+              <HsaCategory 
+                title="Pending Reimbursement" 
+                paybacks={unpaidHsa} 
+                defaultOpen={true}
+                type="pending"
+              />
 
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <CardTitle className="text-lg">Claimed</CardTitle>
-                  </div>
-                  <CardDescription>{formatCurrency(totalHsaPaid)} reimbursed</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {paidHsa.length > 0 ? (
-                    <div className="divide-y divide-border max-h-80 overflow-y-auto">
-                      <AnimatePresence initial={false}>
-                        {paidHsa.map((payback) => (
-                          <motion.div
-                            key={payback.id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <HsaPaybackCard payback={payback} />
-                          </motion.div>
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">No claimed reimbursements yet</p>
-                  )}
-                </CardContent>
-              </Card>
+              {unpaidHsa.length === 0 && (
+                <Card className="py-8">
+                  <CardContent className="text-center">
+                    <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium">All Caught Up!</h3>
+                    <p className="text-muted-foreground">No pending HSA reimbursements.</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              <HsaCategory 
+                title="Claimed" 
+                paybacks={paidHsa} 
+                defaultOpen={false}
+                type="paid"
+              />
             </div>
           )}
         </TabsContent>

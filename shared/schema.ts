@@ -91,6 +91,7 @@ export const debts = pgTable("debts", {
   originalBalance: decimal("original_balance", { precision: 12, scale: 2 }),
   interestRate: decimal("interest_rate", { precision: 5, scale: 2 }),
   minimumPayment: decimal("minimum_payment", { precision: 12, scale: 2 }),
+  plannedPayment: decimal("planned_payment", { precision: 12, scale: 2 }),
   dueDay: integer("due_day"),
   owner: text("owner").notNull(), // Kevin, Jamie
   notes: text("notes"),

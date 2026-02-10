@@ -1,14 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Expense, Income, Debt } from "@shared/schema";
 import { PayoffSummary } from "@/components/debt-payoff/payoff-summary";
 import { AllocationList } from "@/components/debt-payoff/allocation-list";
 import { PaidOffList } from "@/components/debt-payoff/paid-off-list";
 import { calculateMonthlyAmount } from "@/components/debt-payoff/utils";
 import { useState, useEffect } from "react";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, Save } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function DebtPayoff() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: incomes, isLoading: incomesLoading } = useQuery<Income[]>({ 
     queryKey: ["/api/incomes"] 
   });
@@ -21,21 +26,43 @@ export default function DebtPayoff() {
 
   const [allocations, setAllocations] = useState<Record<string, number>>({});
 
-  // Initialize allocations with minimum payments once debts are loaded
+  // Initialize allocations with planned payments or minimum payments once debts are loaded
   useEffect(() => {
     if (debts) {
       const initialAllocations: Record<string, number> = {};
       debts.forEach(debt => {
-        // Preserve existing user edits if any (though this resets on refresh)
-        // We only set if not present to avoid overwriting user input during re-renders if debts change
-        // But since this runs on debts change, we need to be careful.
-        // Simple approach: just use min payment as default in the component if key missing.
-        // But we want to sum them up.
-        initialAllocations[debt.id] = parseFloat(debt.minimumPayment?.toString() || "0");
+        // Use planned payment if available, otherwise default to minimum payment
+        const planned = debt.plannedPayment ? parseFloat(debt.plannedPayment.toString()) : 0;
+        const min = parseFloat(debt.minimumPayment?.toString() || "0");
+        initialAllocations[debt.id] = planned > 0 ? planned : min;
       });
       setAllocations(prev => ({ ...initialAllocations, ...prev }));
     }
   }, [debts]);
+
+  const updatePlannedPaymentMutation = useMutation({
+    mutationFn: async (updatedAllocations: Record<string, number>) => {
+      // We need to update each debt with its new planned payment
+      const promises = Object.entries(updatedAllocations).map(([debtId, amount]) => 
+        apiRequest("PATCH", `/api/debts/${debtId}`, { plannedPayment: amount })
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/debts"] });
+      toast({
+        title: "Strategy Saved",
+        description: "Your planned monthly payments have been updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save your payment strategy. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
 
   if (incomesLoading || expensesLoading || debtsLoading) {
     return (
@@ -72,6 +99,10 @@ export default function DebtPayoff() {
     }));
   };
 
+  const handleSaveStrategy = () => {
+    updatePlannedPaymentMutation.mutate(allocations);
+  };
+
   return (
     <div className="container mx-auto p-4 space-y-8 max-w-5xl">
       <div className="flex flex-col gap-2">
@@ -97,7 +128,22 @@ export default function DebtPayoff() {
       />
 
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold tracking-tight">Allocation Strategy</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold tracking-tight">Allocation Strategy</h2>
+          <Button 
+            onClick={handleSaveStrategy} 
+            disabled={updatePlannedPaymentMutation.isPending}
+            className="bg-green-600 hover:bg-green-700 text-white"
+            size="sm"
+          >
+            {updatePlannedPaymentMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Save Strategy
+          </Button>
+        </div>
         <AllocationList 
           debts={activeDebts} 
           allocations={allocations} 

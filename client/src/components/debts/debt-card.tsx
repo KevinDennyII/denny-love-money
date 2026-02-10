@@ -358,11 +358,16 @@ export function DebtCard({ debt }: { debt: Debt }) {
               <span className="font-medium">{progress.toFixed(0)}%</span>
             </div>
             <Progress value={progress} className="h-2.5 w-full" />
-            {debt.minimumPayment && (
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Min Payment: <span className="font-medium">{formatCurrency(minimumPayment)}</span>
-              </p>
-            )}
+            <div className="flex justify-between items-center mt-1.5">
+               <p className="text-xs text-muted-foreground">
+                  Paid: <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(Math.max(0, original - balance))}</span>
+               </p>
+               {debt.minimumPayment && (
+                <p className="text-xs text-muted-foreground">
+                  Min: <span className="font-medium">{formatCurrency(minimumPayment)}</span>
+                </p>
+               )}
+            </div>
           </div>
         )}
 

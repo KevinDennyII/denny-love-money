@@ -24,6 +24,14 @@ export default function Debts() {
   const totalDebt = activeDebts.reduce((sum, d) => sum + parseFloat(d.currentBalance as string), 0);
   const totalPaidOff = paidOffDebts.reduce((sum, d) => sum + parseFloat(d.currentBalance as string), 0);
 
+  const totalPaidDown = debts.reduce((sum, d) => {
+    const current = parseFloat(d.currentBalance as string || '0');
+    const original = d.originalBalance 
+      ? parseFloat(d.originalBalance as string) 
+      : current;
+    return sum + Math.max(0, original - current);
+  }, 0);
+
   const kevinDebts = activeDebts.filter(d => d.owner === 'Kevin');
   const jamieDebts = activeDebts.filter(d => d.owner === 'Jamie');
 
@@ -90,11 +98,11 @@ export default function Debts() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Paid Off</CardDescription>
-            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalPaidOff)}</CardTitle>
+            <CardDescription>Total Paid Down</CardDescription>
+            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalPaidDown)}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">{paidOffDebts.length} debts cleared</p>
+            <p className="text-xs text-muted-foreground">Principal paid off</p>
           </CardContent>
         </Card>
       </div>

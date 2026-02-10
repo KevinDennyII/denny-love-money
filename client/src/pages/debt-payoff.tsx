@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Expense, Income, Debt } from "@shared/schema";
 import { PayoffSummary } from "@/components/debt-payoff/payoff-summary";
 import { AllocationList } from "@/components/debt-payoff/allocation-list";
+import { PaidOffList } from "@/components/debt-payoff/paid-off-list";
 import { calculateMonthlyAmount } from "@/components/debt-payoff/utils";
 import { useState, useEffect } from "react";
 import { Loader2, Info } from "lucide-react";
@@ -44,6 +45,9 @@ export default function DebtPayoff() {
     );
   }
 
+  const activeDebts = debts?.filter(d => !d.isPaidOff && parseFloat(d.currentBalance.toString()) > 0) || [];
+  const paidOffDebts = debts?.filter(d => d.isPaidOff || parseFloat(d.currentBalance.toString()) <= 0) || [];
+
   const totalIncome = incomes?.reduce((sum, income) => {
     // Only active incomes
     // Schema doesn't have isActive for income? Let's check.
@@ -57,7 +61,9 @@ export default function DebtPayoff() {
     return sum + calculateMonthlyAmount(parseFloat(expense.budgetedAmount.toString()), expense.frequency);
   }, 0) || 0;
 
-  const totalAllocated = Object.values(allocations).reduce((sum, val) => sum + val, 0);
+  const totalAllocated = activeDebts.reduce((sum, debt) => {
+    return sum + (allocations[debt.id] || parseFloat(debt.minimumPayment?.toString() || "0"));
+  }, 0);
 
   const handleAllocationChange = (debtId: string, amount: number) => {
     setAllocations(prev => ({
@@ -93,11 +99,17 @@ export default function DebtPayoff() {
       <div className="space-y-4">
         <h2 className="text-xl font-semibold tracking-tight">Allocation Strategy</h2>
         <AllocationList 
-          debts={debts || []} 
+          debts={activeDebts} 
           allocations={allocations} 
           onAllocationChange={handleAllocationChange} 
         />
       </div>
+
+      {paidOffDebts.length > 0 && (
+        <div className="space-y-4 pt-4">
+          <PaidOffList debts={paidOffDebts} />
+        </div>
+      )}
     </div>
   );
 }

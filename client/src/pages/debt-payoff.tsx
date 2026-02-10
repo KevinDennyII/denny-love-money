@@ -44,7 +44,7 @@ export default function DebtPayoff() {
     mutationFn: async (updatedAllocations: Record<string, number>) => {
       // We need to update each debt with its new planned payment
       const promises = Object.entries(updatedAllocations).map(([debtId, amount]) => 
-        apiRequest("PATCH", `/api/debts/${debtId}`, { plannedPayment: amount })
+        apiRequest("PATCH", `/api/debts/${debtId}`, { plannedPayment: amount.toString() })
       );
       await Promise.all(promises);
     },

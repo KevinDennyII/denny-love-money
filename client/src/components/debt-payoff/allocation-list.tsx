@@ -56,7 +56,7 @@ export function AllocationList({ debts, allocations, onAllocationChange }: Alloc
           {sortedDebts.map((debt) => {
             const balance = parseFloat(debt.currentBalance?.toString() || "0");
             const minPayment = parseFloat(debt.minimumPayment?.toString() || "0");
-            const currentAllocation = allocations[debt.id] || minPayment;
+            const currentAllocation = allocations[debt.id] ?? minPayment;
             const months = calculateMonthsToPayoff(debt, currentAllocation);
             const isPayable = months !== Infinity;
 
@@ -77,6 +77,7 @@ export function AllocationList({ debts, allocations, onAllocationChange }: Alloc
                     <Input
                       type="number"
                       value={currentAllocation}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
                         onAllocationChange(debt.id, isNaN(val) ? 0 : val);

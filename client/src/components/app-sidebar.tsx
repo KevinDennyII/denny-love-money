@@ -8,6 +8,7 @@ import {
   PiggyBank,
   TrendingUp,
   Settings,
+  Calculator,
 } from "lucide-react";
 import {
   Sidebar,
@@ -42,6 +43,11 @@ const mainMenuItems = [
     title: "Debts",
     url: "/debts",
     icon: CreditCard,
+  },
+  {
+    title: "Debt Payoff",
+    url: "/debt-payoff",
+    icon: Calculator,
   },
 ];
 

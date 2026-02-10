@@ -17,6 +17,7 @@ import Medical from "@/pages/medical";
 import Savings from "@/pages/savings";
 import NetWorth from "@/pages/networth";
 import Settings from "@/pages/settings";
+import DebtPayoff from "@/pages/debt-payoff";
 import AuthPage from "@/pages/auth";
 import React from "react";
 
@@ -93,6 +94,9 @@ function Router() {
       </Route>
       <Route path="/networth">
         <ProtectedRoute component={NetWorth} />
+      </Route>
+      <Route path="/debt-payoff">
+        <ProtectedRoute component={DebtPayoff} />
       </Route>
       <Route path="/settings">
         <ProtectedRoute component={Settings} />

@@ -64,6 +64,11 @@ function AssetCard({ asset }: { asset: Asset }) {
               <OwnerBadge owner={asset.owner} variant={asset.owner === 'Kevin' ? 'default' : asset.owner === 'Jamie' ? 'secondary' : 'outline'} />
             )}
           </div>
+          {asset.lastUpdated && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Updated: {new Date(asset.lastUpdated).toLocaleDateString()} {new Date(asset.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          )}
         </div>
       </div>
       <div className="text-right">

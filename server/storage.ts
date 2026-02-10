@@ -94,7 +94,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAccount(id: string, account: Partial<InsertAccount>): Promise<Account | undefined> {
-    const [updated] = await db.update(accounts).set(account).where(eq(accounts.id, id)).returning();
+    const [updated] = await db.update(accounts).set({ ...account, lastUpdated: new Date() }).where(eq(accounts.id, id)).returning();
     return updated;
   }
 
@@ -169,7 +169,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateExpense(id: string, expense: Partial<InsertExpense>): Promise<Expense | undefined> {
-    const [updated] = await db.update(expenses).set(expense).where(eq(expenses.id, id)).returning();
+    const [updated] = await db.update(expenses).set({ ...expense, lastUpdated: new Date() }).where(eq(expenses.id, id)).returning();
     return updated;
   }
 
@@ -269,7 +269,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAsset(id: string, asset: Partial<InsertAsset>): Promise<Asset | undefined> {
-    const [updated] = await db.update(assets).set(asset).where(eq(assets.id, id)).returning();
+    const [updated] = await db.update(assets).set({ ...asset, lastUpdated: new Date() }).where(eq(assets.id, id)).returning();
     return updated;
   }
 

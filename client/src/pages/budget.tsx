@@ -256,6 +256,11 @@ function ExpenseCard({ expense, totalBudget }: { expense: Expense; totalBudget: 
                 <Badge variant="secondary" className="text-xs">Chime</Badge>
               )}
             </div>
+            {expense.lastUpdated && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Updated: {new Date(expense.lastUpdated).toLocaleDateString()} {new Date(expense.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">

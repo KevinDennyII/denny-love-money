@@ -398,6 +398,11 @@ function DebtCard({ debt }: { debt: Debt }) {
                 </>
               )}
             </div>
+            {debt.lastUpdated && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Updated: {new Date(debt.lastUpdated).toLocaleDateString()} {new Date(debt.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
           </div>
         </div>
 

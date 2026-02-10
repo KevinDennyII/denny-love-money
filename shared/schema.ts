@@ -14,9 +14,10 @@ export const accounts = pgTable("accounts", {
   owner: text("owner").notNull(), // Kevin, Jamie, Joint
   notes: text("notes"),
   isActive: boolean("is_active").notNull().default(true),
+  lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
-export const insertAccountSchema = createInsertSchema(accounts).omit({ id: true });
+export const insertAccountSchema = createInsertSchema(accounts).omit({ id: true, lastUpdated: true });
 export type InsertAccount = z.infer<typeof insertAccountSchema>;
 export type Account = typeof accounts.$inferSelect;
 
@@ -73,9 +74,10 @@ export const expenses = pgTable("expenses", {
   dueDay: integer("due_day"), // day of month when due
   notes: text("notes"),
   isActive: boolean("is_active").notNull().default(true),
+  lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
-export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true });
+export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true, lastUpdated: true });
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type Expense = typeof expenses.$inferSelect;
 

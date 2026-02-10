@@ -15,7 +15,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { formatCurrency } from "@/lib/formatters";
 import { Plus, Wallet, Building2, CreditCard, PiggyBank, TrendingUp, Landmark, Pencil, Trash2, ChevronDown } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { insertAccountSchema, type Account, type InsertAccount } from "@shared/schema";
+import { insertAccountSchema, type Account, type InsertAccount, type Debt } from "@shared/schema";
+
+type AccountDisplay = Account & { isDebt?: boolean };
 import { OwnerBadge } from "@/components/owner-badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { z } from "zod";
@@ -157,7 +159,6 @@ function EditAccountDialog({ account, onClose }: { account: Account; onClose: ()
                     <SelectContent>
                       <SelectItem value="checking">Checking</SelectItem>
                       <SelectItem value="savings">Savings</SelectItem>
-                      <SelectItem value="credit">Credit Card</SelectItem>
                       <SelectItem value="investment">Investment</SelectItem>
                       <SelectItem value="loan">Loan</SelectItem>
                     </SelectContent>
@@ -250,7 +251,7 @@ function EditAccountDialog({ account, onClose }: { account: Account; onClose: ()
   );
 }
 
-function AccountCategory({ title, icon, accounts }: { title: string, icon: React.ReactNode, accounts: Account[] }) {
+function AccountCategory({ title, icon, accounts }: { title: string, icon: React.ReactNode, accounts: AccountDisplay[] }) {
   const [isOpen, setIsOpen] = useState(true);
 
   if (accounts.length === 0) return null;
@@ -277,7 +278,7 @@ function AccountCategory({ title, icon, accounts }: { title: string, icon: React
   );
 }
 
-function AccountCard({ account }: { account: Account }) {
+function AccountCard({ account }: { account: AccountDisplay }) {
   const [editOpen, setEditOpen] = useState(false);
   const Icon = accountTypeIcons[account.accountType] || Building2;
   const balance = parseFloat(account.currentBalance as string);
@@ -311,6 +312,11 @@ function AccountCard({ account }: { account: Account }) {
                 </>
               )}
             </div>
+            {account.lastUpdated && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Updated: {new Date(account.lastUpdated).toLocaleDateString()} {new Date(account.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -325,15 +331,17 @@ function AccountCard({ account }: { account: Account }) {
             </Badge>
           </div>
           
-          <Button 
-            size="icon" 
-            variant="ghost" 
-            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => setEditOpen(true)}
-            data-testid={`button-edit-account-${account.id}`}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
+          {!account.isDebt && (
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => setEditOpen(true)}
+              data-testid={`button-edit-account-${account.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -446,11 +454,14 @@ function AddAccountDialog() {
                       <SelectContent>
                         <SelectItem value="checking">Checking</SelectItem>
                         <SelectItem value="savings">Savings</SelectItem>
-                        <SelectItem value="credit">Credit Card</SelectItem>
+                        {/* Credit Cards are managed in Debts page */}
                         <SelectItem value="investment">Investment</SelectItem>
                         <SelectItem value="loan">Loan</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-[0.8rem] text-muted-foreground mt-2">
+                      To add a Credit Card, please use the <a href="/debts" className="underline hover:text-primary">Debts page</a>.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -531,14 +542,38 @@ function AddAccountDialog() {
   );
 }
 
+
 export default function Accounts() {
-  const { data: accounts = [], isLoading } = useQuery<Account[]>({
+  const { data: accounts = [], isLoading: isLoadingAccounts } = useQuery<Account[]>({
     queryKey: ['/api/accounts'],
   });
 
+  const { data: debts = [], isLoading: isLoadingDebts } = useQuery<Debt[]>({
+    queryKey: ['/api/debts'],
+  });
+
+  const isLoading = isLoadingAccounts || isLoadingDebts;
+
   const checkingAccounts = accounts.filter(a => a.accountType === 'checking');
   const savingsAccounts = accounts.filter(a => a.accountType === 'savings');
-  const creditAccounts = accounts.filter(a => a.accountType === 'credit');
+  
+  // We use credit cards from debts instead of accounts to unify data
+  const creditAccounts = debts
+    .filter(d => d.debtType === 'credit_card')
+    .map(d => ({
+      id: d.id,
+      name: d.name,
+      institution: d.creditor,
+      accountNumber: null, // Debts don't always have this field easily accessible here, or it's not in the Debt type
+      accountType: 'credit' as const,
+      currentBalance: d.currentBalance,
+      owner: d.owner,
+      notes: d.notes,
+      isActive: !d.isPaidOff,
+      lastUpdated: d.lastUpdated,
+      isDebt: true // Flag to identify this as a debt-sourced account
+    }));
+
   const investmentAccounts = accounts.filter(a => a.accountType === 'investment');
   const loanAccounts = accounts.filter(a => a.accountType === 'loan');
 
@@ -574,6 +609,9 @@ export default function Accounts() {
           <CardHeader className="pb-2">
             <CardDescription>Credit Balance</CardDescription>
             <CardTitle className="text-2xl text-red-500">{formatCurrency(totalCredit)}</CardTitle>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Calculated from credit cards on <a href="/debts" className="underline hover:text-primary">Debts page</a>
+            </p>
           </CardHeader>
         </Card>
         <Card>
@@ -611,11 +649,7 @@ export default function Accounts() {
             icon={<PiggyBank className="h-5 w-5" />}
             accounts={savingsAccounts} 
           />
-          <AccountCategory 
-            title="Credit Cards" 
-            icon={<CreditCard className="h-5 w-5" />}
-            accounts={creditAccounts} 
-          />
+          {/* Credit Cards list hidden as requested, but calculation remains */}
           <AccountCategory 
             title="Investment Accounts" 
             icon={<TrendingUp className="h-5 w-5" />}

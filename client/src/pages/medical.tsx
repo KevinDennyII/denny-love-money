@@ -1,115 +1,14 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/formatters";
-import { CheckCircle2, ChevronDown, Stethoscope, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { type MedicalBill, type HsaPayback } from "@shared/schema";
-import { motion, AnimatePresence } from "framer-motion";
-
-import { MedicalBillCard } from "@/components/medical/medical-bill-card";
-import { HsaPaybackCard } from "@/components/medical/hsa-payback-card";
 import { AddMedicalBillDialog } from "@/components/medical/add-medical-bill-dialog";
 import { AddHsaDialog } from "@/components/medical/add-hsa-dialog";
-
-function MedicalBillCategory({ title, bills, defaultOpen }: { title: string, bills: MedicalBill[], defaultOpen: boolean }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
-  if (bills.length === 0) return null;
-
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
-      <div className="flex items-center justify-between">
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
-            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
-              {title === "Active Bills" ? <Stethoscope className="h-5 w-5 text-red-500" /> : <CheckCircle2 className="h-5 w-5 text-green-500" />}
-              {title}
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
-            </h2>
-          </Button>
-        </CollapsibleTrigger>
-      </div>
-      <CollapsibleContent className="space-y-4">
-        <AnimatePresence>
-          {bills.map((bill) => (
-            <motion.div
-              key={bill.id}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              layout
-            >
-              <MedicalBillCard bill={bill} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
-function HsaCategory({ title, paybacks, defaultOpen, type }: { title: string, paybacks: HsaPayback[], defaultOpen: boolean, type: 'pending' | 'paid' }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  
-  if (paybacks.length === 0) return null;
-
-  const total = paybacks.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-
-  // Group by year if pending
-  const paybacksByYear = type === 'pending' ? paybacks.reduce((acc, p) => {
-    const year = p.year;
-    if (!acc[year]) acc[year] = [];
-    acc[year].push(p);
-    return acc;
-  }, {} as Record<number, HsaPayback[]>) : null;
-
-  const sortedYears = paybacksByYear ? Object.keys(paybacksByYear).map(Number).sort((a, b) => a - b) : [];
-
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
-      <div className="flex items-center justify-between">
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" className="w-full justify-start p-0 hover:bg-transparent h-auto group">
-            <h2 className="text-lg font-semibold flex items-center gap-2 w-full">
-              {type === 'pending' ? <Clock className="h-5 w-5 text-orange-500" /> : <CheckCircle2 className="h-5 w-5 text-green-500" />}
-              {title}
-              <span className="text-muted-foreground font-normal text-sm ml-2">
-                ({formatCurrency(total)})
-              </span>
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
-            </h2>
-          </Button>
-        </CollapsibleTrigger>
-      </div>
-      <CollapsibleContent className="space-y-2 pl-4 border-l-2 border-muted ml-2">
-        {type === 'pending' && paybacksByYear ? (
-           <div className="space-y-4">
-             {sortedYears.map(year => (
-               <div key={year} className="space-y-2">
-                 <h3 className="text-sm font-medium text-muted-foreground pl-2">{year}</h3>
-                 <div className="space-y-2">
-                   {paybacksByYear[year].map(payback => (
-                     <HsaPaybackCard key={payback.id} payback={payback} />
-                   ))}
-                 </div>
-               </div>
-             ))}
-           </div>
-        ) : (
-          <div className="space-y-2">
-            {paybacks.map(payback => (
-              <HsaPaybackCard key={payback.id} payback={payback} />
-            ))}
-          </div>
-        )}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
+import { MedicalBillCategory } from "@/components/medical/medical-bill-category";
+import { HsaCategory } from "@/components/medical/hsa-category";
 
 export default function Medical() {
   const { data: medicalBills = [], isLoading: billsLoading } = useQuery<MedicalBill[]>({

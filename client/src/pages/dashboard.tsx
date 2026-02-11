@@ -63,7 +63,7 @@ export default function Dashboard() {
         <StatCard
           title="Monthly Savings"
           value={formatCurrency(totalSavings)}
-          description="Across all accounts"
+          description="Budgeted contributions"
           icon={PiggyBank}
           trend="up"
           isLoading={isLoading}

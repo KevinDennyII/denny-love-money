@@ -60,14 +60,14 @@ export default function Accounts() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Monthly Checking</CardDescription>
-            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalChecking)}/mo</CardTitle>
+            <CardDescription>Checking Balance</CardDescription>
+            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalChecking)}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Monthly Savings</CardDescription>
-            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalSavings)}/mo</CardTitle>
+            <CardDescription>Savings Balance</CardDescription>
+            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalSavings)}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -81,8 +81,8 @@ export default function Accounts() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Monthly Investments</CardDescription>
-            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalInvestment)}/mo</CardTitle>
+            <CardDescription>Investment Balance</CardDescription>
+            <CardTitle className="text-2xl text-green-500">{formatCurrency(totalInvestment)}</CardTitle>
           </CardHeader>
         </Card>
       </div>

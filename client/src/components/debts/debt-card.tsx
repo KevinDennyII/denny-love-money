@@ -237,15 +237,15 @@ function EditDebtDialog({ debt, onClose }: { debt: Debt; onClose: () => void }) 
                 <FormItem>
                   <FormLabel>Due Day</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      min="1" 
-                      max="31" 
-                      placeholder="1-31" 
+                    <Input
+                      type="number"
+                      min="1"
+                      max="31"
+                      placeholder="1-31"
                       {...field}
                       value={field.value ?? ""}
                       onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                      data-testid="input-edit-due-day" 
+                      data-testid="input-edit-due-day"
                     />
                   </FormControl>
                   <FormMessage />
@@ -286,9 +286,9 @@ function EditDebtDialog({ debt, onClose }: { debt: Debt; onClose: () => void }) 
             )}
           />
           <DialogFooter className="flex justify-between gap-2">
-            <Button 
-              type="button" 
-              variant="destructive" 
+            <Button
+              type="button"
+              variant="destructive"
               onClick={() => deleteMutation.mutate()}
               disabled={deleteMutation.isPending}
               data-testid="button-delete-debt"
@@ -315,7 +315,7 @@ export function DebtCard({ debt }: { debt: Debt }) {
 
   return (
     <>
-      <div 
+      <div
         className={`group flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all ${debt.isPaidOff ? 'opacity-60 bg-muted/30' : ''}`}
         data-testid={`card-debt-${debt.id}`}
       >
@@ -375,7 +375,7 @@ export function DebtCard({ debt }: { debt: Debt }) {
         <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
           <div className="text-right">
              <div className={`text-xl font-bold ${debt.isPaidOff ? 'text-green-500 line-through decoration-2' : 'text-red-500'}`}>
-              {formatCurrency(balance)}
+              {debt.isPaidOff ? formatCurrency(original) : formatCurrency(balance)}
             </div>
             {debt.interestRate && parseFloat(debt.interestRate as string) > 0 && !debt.isPaidOff && (
               <p className="text-xs text-muted-foreground">
@@ -383,10 +383,10 @@ export function DebtCard({ debt }: { debt: Debt }) {
               </p>
             )}
           </div>
-          
-          <Button 
-            size="icon" 
-            variant="ghost" 
+
+          <Button
+            size="icon"
+            variant="ghost"
             className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={() => setEditOpen(true)}
             data-testid={`button-edit-debt-${debt.id}`}

@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check if user was previously authenticated
-    const storedAuth = localStorage.getItem("denny-money-auth");
+    const storedAuth = sessionStorage.getItem("denny-money-auth");
     if (storedAuth === "true") {
       setIsAuthenticated(true);
     }
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // but plan is to use server)
       await apiRequest("POST", "/api/login", { passphrase });
       
-      localStorage.setItem("denny-money-auth", "true");
+      sessionStorage.setItem("denny-money-auth", "true");
       setIsAuthenticated(true);
       // setLocation("/") is handled by the component reacting to isAuthenticated change
       toast({
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("denny-money-auth");
+    sessionStorage.removeItem("denny-money-auth");
     setIsAuthenticated(false);
     setLocation("/auth");
     toast({

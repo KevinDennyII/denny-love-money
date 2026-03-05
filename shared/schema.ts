@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, decimal, boolean, date, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, decimal, boolean, date, integer, timestamp, pgEnum, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -166,16 +166,23 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({ i
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Transaction = typeof transactions.$inferSelect;
 
+export const userRoleEnum = pgEnum('user_role', ['admin', 'user']);
+
 // Keep user schema for potential future auth
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  id: serial("id").primaryKey(),
+  username: varchar("username", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password_hash: varchar("password_hash", { length: 255 }).notNull(),
+  role: userRoleEnum('role').default('user').notNull(),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
-  password: true,
+  email: true,
+  password_hash: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

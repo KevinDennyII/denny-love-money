@@ -72,9 +72,12 @@ export interface IStorage {
   deleteAsset(id: string): Promise<boolean>;
 
   // Users (for future auth)
-  getUser(id: string): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
+  getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -279,7 +282,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Users
-  async getUser(id: string): Promise<User | undefined> {
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
@@ -292,6 +299,16 @@ export class DatabaseStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const [newUser] = await db.insert(users).values(user).returning();
     return newUser;
+  }
+
+  async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
+    const [updated] = await db.update(users).set({ ...user, updated_at: new Date() }).where(eq(users.id, id)).returning();
+    return updated;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id)).returning();
+    return result.length > 0;
   }
 }
 

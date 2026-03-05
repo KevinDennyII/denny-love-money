@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: denny-love-money-api
+    runtime: node
+    plan: free
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm run db:push && npm start"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: denny_love_money_postgresql
+          property: connectionString
+      - key: NODE_ENV
+        value: production

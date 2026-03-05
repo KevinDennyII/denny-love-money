@@ -9,7 +9,8 @@ import {
   insertDebtSchema, 
   insertMedicalBillSchema, 
   insertHsaPaybackSchema, 
-  insertAssetSchema 
+  insertAssetSchema, 
+  insertUserSchema 
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -407,6 +408,63 @@ export async function registerRoutes(
       const deleted = await storage.deleteAsset(req.params.id);
       if (!deleted) {
         return res.status(404).json({ error: "Asset not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // ==================== USERS ====================
+  app.get("/api/users", async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      res.json(users);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const user = await storage.getUser(parseInt(req.params.id));
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post("/api/users", async (req, res) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(data);
+      res.status(201).json(user);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch("/api/users/:id", async (req, res) => {
+    try {
+      const data = insertUserSchema.partial().parse(req.body);
+      const user = await storage.updateUser(parseInt(req.params.id), data);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteUser(parseInt(req.params.id));
+      if (!deleted) {
+        return res.status(404).json({ error: "User not found" });
       }
       res.status(204).send();
     } catch (error) {

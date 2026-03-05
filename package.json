@@ -13,7 +13,8 @@
     "db:seed": "tsx -r dotenv/config server/seed.ts",
     "db:seed-users": "tsx -r dotenv/config script/seed-users.ts",
     "db:update-guest-pw": "tsx -r dotenv/config script/update-guest-password.ts",
-    "db:update-prod-user": "tsx -r dotenv/config script/update-production-user.ts"
+    "db:update-prod-user": "tsx -r dotenv/config script/update-production-user.ts",
+    "db:prod-reset": "tsx -r dotenv/config script/db-reset.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

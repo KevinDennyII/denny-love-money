@@ -29,7 +29,7 @@ async function main() {
   };
 
   console.log('Seeding users...');
-  await db.insert(users).values([...adminUsers, regularUser]);
+  await db.insert(users).values([...adminUsers, regularUser]).onConflictDoNothing();
   console.log('Users seeded successfully!');
 
   process.exit(0);

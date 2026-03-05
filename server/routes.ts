@@ -14,7 +14,7 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function registerRoutes(
   httpServer: Server,

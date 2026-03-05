@@ -36,7 +36,7 @@ This project is built with a modern, full-stack JavaScript architecture, combini
 
 ## 🚀 Deployment & Development
 
-This project is deployed using **[Replit](https://replit.com/)**, a powerful and versatile platform for hosting web applications. The database is a combination of **[Replit](https://replit.com/site/hosting/databases-on-replit)** and **[Render](https://render.com/)**, ensuring high availability and performance.
+This project is deployed using **[Replit](https://replit.com/)**, a powerful and versatile platform for hosting web applications. The database is powered by **[Replit's](https://replit.com/site/hosting/databases-on-replit)** built-in PostgreSQL, ensuring high availability and performance.
 
 The development of this project was greatly accelerated with the help of the **[Replit](https://replit.com/ai)** and **[Trae IDE](https://trae.ai/)** coding assistants.
 

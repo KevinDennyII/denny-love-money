@@ -17,23 +17,9 @@ async function main() {
   await db.execute(sql`DROP TABLE IF EXISTS hsa_paybacks CASCADE;`);
   await db.execute(sql`DROP TABLE IF EXISTS assets CASCADE;`);
   await db.execute(sql`DROP TABLE IF EXISTS transactions CASCADE;`);
+  await db.execute(sql`DROP TYPE IF EXISTS user_role CASCADE;`);
 
-  console.log('All tables dropped.');
-
-  // Recreate tables
-  await db.execute(sql`${schema.users}`);
-  await db.execute(sql`${schema.accounts}`);
-  await db.execute(sql`${schema.incomes}`);
-  await db.execute(sql`${schema.savingsAllocations}`);
-  await db.execute(sql`${schema.budgetCategories}`);
-  await db.execute(sql`${schema.expenses}`);
-  await db.execute(sql`${schema.debts}`);
-  await db.execute(sql`${schema.medicalBills}`);
-  await db.execute(sql`${schema.hsaPaybacks}`);
-  await db.execute(sql`${schema.assets}`);
-  await db.execute(sql`${schema.transactions}`);
-
-  console.log('Database reset successfully!');
+  console.log('All tables and types dropped.');
 
   process.exit(0);
 }

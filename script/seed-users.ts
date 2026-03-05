@@ -3,7 +3,6 @@ import { users } from '../shared/schema';
 import bcrypt from 'bcryptjs';
 
 async function main() {
-  console.log("Attempting to connect to database with URL:", process.env.DATABASE_URL);
   const password = 'love-money';
   const hashedPassword = await bcrypt.hash(password, 10);
 

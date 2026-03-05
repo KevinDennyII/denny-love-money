@@ -3,6 +3,7 @@ import { formatCurrency } from "./utils";
 import { Debt } from "@shared/schema";
 import { CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface PaidOffListProps {
   debts: Debt[];
@@ -33,23 +34,25 @@ export function PaidOffList({ debts }: PaidOffListProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {debts.map((debt) => (
-              <TableRow key={debt.id}>
-                <TableCell className="font-medium">{debt.name}</TableCell>
-                <TableCell>{debt.creditor}</TableCell>
-                <TableCell>
-                  {debt.originalBalance 
-                    ? formatCurrency(parseFloat(debt.originalBalance as string))
-                    : "-"
-                  }
-                </TableCell>
-                <TableCell className="text-right">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                    Paid Off
-                  </span>
-                </TableCell>
-              </TableRow>
-            ))}
+            <AnimatePresence>
+              {debts.map((debt) => (
+                <motion.tr layout key={debt.id}>
+                  <TableCell className="font-medium">{debt.name}</TableCell>
+                  <TableCell>{debt.creditor}</TableCell>
+                  <TableCell>
+                    {debt.originalBalance 
+                      ? formatCurrency(parseFloat(debt.originalBalance as string))
+                      : "-"
+                    }
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      Paid Off
+                    </span>
+                  </TableCell>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </TableBody>
         </Table>
       </CardContent>

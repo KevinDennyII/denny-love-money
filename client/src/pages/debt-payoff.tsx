@@ -10,9 +10,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function DebtPayoff() {
   const { toast } = useToast();
+  const { readOnly } = useAuth();
   const queryClient = useQueryClient();
   const { data: incomes, isLoading: incomesLoading } = useQuery<Income[]>({ 
     queryKey: ["/api/incomes"] 
@@ -132,7 +134,7 @@ export default function DebtPayoff() {
           <h2 className="text-xl font-semibold tracking-tight">Allocation Strategy</h2>
           <Button 
             onClick={handleSaveStrategy} 
-            disabled={updatePlannedPaymentMutation.isPending}
+            disabled={updatePlannedPaymentMutation.isPending || readOnly}
             className="bg-green-600 hover:bg-green-700 text-white"
             size="sm"
           >
@@ -148,6 +150,7 @@ export default function DebtPayoff() {
           debts={activeDebts} 
           allocations={allocations} 
           onAllocationChange={handleAllocationChange} 
+          readOnly={readOnly}
         />
       </div>
 

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,6 +19,7 @@ import { debtFormSchema, type DebtFormValues } from "./schemas";
 export function AddDebtDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<DebtFormValues>({
     resolver: zodResolver(debtFormSchema),
@@ -72,7 +74,7 @@ export function AddDebtDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button data-testid="button-add-debt">
+        <Button data-testid="button-add-debt" disabled={readOnly}>
           <Plus className="h-4 w-4 mr-2" />
           Add Debt
         </Button>

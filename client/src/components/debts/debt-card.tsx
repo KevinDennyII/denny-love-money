@@ -305,8 +305,11 @@ function EditDebtDialog({ debt, onClose }: { debt: Debt; onClose: () => void }) 
   );
 }
 
+import { useAuth } from "@/hooks/use-auth";
+
 export function DebtCard({ debt }: { debt: Debt }) {
   const [editOpen, setEditOpen] = useState(false);
+  const { readOnly } = useAuth();
   const Icon = debtTypeIcons[debt.debtType] || CreditCard;
   const balance = parseFloat(debt.currentBalance as string);
   const original = debt.originalBalance ? parseFloat(debt.originalBalance as string) : balance;
@@ -384,15 +387,17 @@ export function DebtCard({ debt }: { debt: Debt }) {
             )}
           </div>
 
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => setEditOpen(true)}
-            data-testid={`button-edit-debt-${debt.id}`}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
+          {!readOnly && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => setEditOpen(true)}
+              data-testid={`button-edit-debt-${debt.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

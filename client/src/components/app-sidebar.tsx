@@ -1,4 +1,5 @@
 import { useLocation, Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import {
   LayoutDashboard,
   Wallet,
@@ -69,8 +70,15 @@ const trackingMenuItems = [
   },
 ];
 
+const settingsMenuItem = {
+  title: "Settings",
+  url: "/settings",
+  icon: Settings,
+};
+
 export function AppSidebar() {
   const [location] = useLocation();
+  const { user } = useAuth();
 
   return (
     <Sidebar>
@@ -121,17 +129,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={location === "/settings"}>
-              <Link href="/settings" data-testid="nav-settings">
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarFooter>
+        {user?.role === 'admin' && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={location === settingsMenuItem.url}>
+                <Link href={settingsMenuItem.url} data-testid="nav-settings">
+                  <settingsMenuItem.icon className="h-4 w-4" />
+                  <span>{settingsMenuItem.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type InsertAccount } from "@shared/schema";
 import { accountFormSchema, type AccountFormValues } from "./schemas";
@@ -17,6 +18,7 @@ import { accountFormSchema, type AccountFormValues } from "./schemas";
 export function AddAccountDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
@@ -61,7 +63,7 @@ export function AddAccountDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button data-testid="button-add-account">
+        <Button data-testid="button-add-account" disabled={readOnly}>
           <Plus className="h-4 w-4 mr-2" />
           Add Account
         </Button>

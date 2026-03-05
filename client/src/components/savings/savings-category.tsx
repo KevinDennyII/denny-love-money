@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { type SavingsAllocation, type Account } from "@shared/schema";
 import { SavingsCard } from "./savings-card";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function SavingsCategory({ title, icon, allocations, accounts, getAccount }: { 
   title: string; 
@@ -30,14 +31,16 @@ export function SavingsCategory({ title, icon, allocations, accounts, getAccount
         </CollapsibleTrigger>
       </div>
       <CollapsibleContent className="space-y-4">
-        {allocations.map((allocation) => (
-          <SavingsCard 
-            key={allocation.id} 
-            allocation={allocation} 
-            account={getAccount(allocation.accountId)}
-            accounts={accounts}
-          />
-        ))}
+        <AnimatePresence>
+          {allocations.map((allocation) => (
+            <SavingsCard 
+              key={allocation.id} 
+              allocation={allocation} 
+              account={getAccount(allocation.accountId)}
+              accounts={accounts}
+            />
+          ))}
+        </AnimatePresence>
       </CollapsibleContent>
     </Collapsible>
   );

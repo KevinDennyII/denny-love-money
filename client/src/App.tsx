@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
@@ -34,7 +35,9 @@ function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center justify-between gap-2 p-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-auto p-6">
             {children}
@@ -59,6 +62,20 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     // though wouter's setLocation is usually safe.
     setTimeout(() => setLocation("/auth"), 0);
     return null;
+  }
+
+  return (
+    <Layout>
+      <Component />
+    </Layout>
+  );
+}
+
+function AdminRoute({ component: Component }: { component: React.ComponentType }) {
+  const { user } = useAuth();
+
+  if (user?.role !== 'admin') {
+    return <NotFound />;
   }
 
   return (
@@ -99,7 +116,7 @@ function Router() {
         <ProtectedRoute component={DebtPayoff} />
       </Route>
       <Route path="/settings">
-        <ProtectedRoute component={Settings} />
+        <AdminRoute component={Settings} />
       </Route>
       
       <Route component={NotFound} />

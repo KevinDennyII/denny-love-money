@@ -4,14 +4,16 @@ import { formatCurrency } from "./utils";
 import { Debt } from "@shared/schema";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface AllocationListProps {
   debts: Debt[];
   allocations: Record<string, number>;
   onAllocationChange: (debtId: string, amount: number) => void;
+  readOnly: boolean;
 }
 
-export function AllocationList({ debts, allocations, onAllocationChange }: AllocationListProps) {
+export function AllocationList({ debts, allocations, onAllocationChange, readOnly }: AllocationListProps) {
   const calculateMonthsToPayoff = (debt: Debt, payment: number) => {
     const balance = parseFloat(debt.currentBalance?.toString() || "0");
     const rate = parseFloat(debt.interestRate?.toString() || "0") / 100 / 12;
@@ -53,66 +55,69 @@ export function AllocationList({ debts, allocations, onAllocationChange }: Alloc
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedDebts.map((debt) => {
-            const balance = parseFloat(debt.currentBalance?.toString() || "0");
-            const minPayment = parseFloat(debt.minimumPayment?.toString() || "0");
-            const currentAllocation = allocations[debt.id] ?? minPayment;
-            const months = calculateMonthsToPayoff(debt, currentAllocation);
-            const isPayable = months !== Infinity;
+          <AnimatePresence>
+            {sortedDebts.map((debt) => {
+              const balance = parseFloat(debt.currentBalance?.toString() || "0");
+              const minPayment = parseFloat(debt.minimumPayment?.toString() || "0");
+              const currentAllocation = allocations[debt.id] ?? minPayment;
+              const months = calculateMonthsToPayoff(debt, currentAllocation);
+              const isPayable = months !== Infinity;
 
-            return (
-              <TableRow key={debt.id}>
-                <TableCell className="font-medium">
-                  <div className="flex flex-col">
-                    <span>{debt.name}</span>
-                    <span className="text-xs text-muted-foreground">{debt.creditor}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{formatCurrency(balance)}</TableCell>
-                <TableCell>{debt.interestRate}%</TableCell>
-                <TableCell>{formatCurrency(minPayment)}</TableCell>
-                <TableCell>
-                  <div className="relative">
-                    <span className="absolute left-2 top-2.5 text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      value={currentAllocation}
-                      onFocus={(e) => e.target.select()}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        onAllocationChange(debt.id, isNaN(val) ? 0 : val);
-                      }}
-                      className="pl-6 w-full"
-                      min={minPayment}
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    {isPayable ? (
-                      <span className={months < 12 ? "text-emerald-600 font-bold" : ""}>
-                        {months} mo
-                        {months > 0 && <span className="text-xs text-muted-foreground block">
-                          ({new Date(new Date().setMonth(new Date().getMonth() + months)).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })})
-                        </span>}
-                      </span>
-                    ) : (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <AlertCircle className="h-4 w-4 text-red-500" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Payment too low to cover interest!</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
+              return (
+                <motion.tr layout key={debt.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex flex-col">
+                      <span>{debt.name}</span>
+                      <span className="text-xs text-muted-foreground">{debt.creditor}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{formatCurrency(balance)}</TableCell>
+                  <TableCell>{debt.interestRate}%</TableCell>
+                  <TableCell>{formatCurrency(minPayment)}</TableCell>
+                  <TableCell>
+                    <div className="relative">
+                      <span className="absolute left-2 top-2.5 text-muted-foreground">$</span>
+                      <Input
+                        type="number"
+                        value={currentAllocation}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          onAllocationChange(debt.id, isNaN(val) ? 0 : val);
+                        }}
+                        className="pl-6 w-full"
+                        min={minPayment}
+                        disabled={readOnly}
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {isPayable ? (
+                        <span className={months < 12 ? "text-emerald-600 font-bold" : ""}>
+                          {months} mo
+                          {months > 0 && <span className="text-xs text-muted-foreground block">
+                            ({new Date(new Date().setMonth(new Date().getMonth() + months)).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })})
+                          </span>}
+                        </span>
+                      ) : (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <AlertCircle className="h-4 w-4 text-red-500" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Payment too low to cover interest!</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                  </TableCell>
+                </motion.tr>
+              );
+            })}
+          </AnimatePresence>
         </TableBody>
       </Table>
     </div>

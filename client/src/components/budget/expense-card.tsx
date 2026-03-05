@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type Expense, type InsertExpense } from "@shared/schema";
@@ -18,6 +19,7 @@ import { expenseFormSchema, type ExpenseFormValues } from "./schemas";
 
 export function EditExpenseDialog({ expense, onClose }: { expense: Expense; onClose: () => void }) {
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
@@ -199,19 +201,25 @@ export function EditExpenseDialog({ expense, onClose }: { expense: Expense; onCl
               </FormItem>
             )}
           />
-          <DialogFooter className="flex justify-between gap-2">
-            <Button 
-              type="button" 
-              variant="destructive" 
-              onClick={() => deleteMutation.mutate()}
-              disabled={deleteMutation.isPending}
-              data-testid="button-delete-expense"
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </Button>
-            <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-expense">
-              {updateMutation.isPending ? "Saving..." : "Save Changes"}
-            </Button>
+          <DialogFooter className="flex justify-between">
+            {!readOnly && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                data-testid="button-delete-expense"
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            )}
+            {form.formState.isDirty ? (
+              <Button type="submit" disabled={updateMutation.isPending || readOnly} data-testid="button-save-expense">
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            ) : (
+              <div /> // Placeholder to keep justify-between working
+            )}
           </DialogFooter>
         </form>
       </Form>
@@ -224,6 +232,7 @@ export function ExpenseCard({ expense, totalBudget }: { expense: Expense; totalB
   const amount = parseFloat(expense.budgetedAmount as string);
   const percentage = totalBudget > 0 ? (amount / totalBudget) * 100 : 0;
   const isPaidWithChime = expense.notes?.includes('Chime');
+  const { readOnly } = useAuth();
 
   return (
     <>
@@ -258,14 +267,16 @@ export function ExpenseCard({ expense, totalBudget }: { expense: Expense; totalB
             <span className="font-semibold">{formatCurrency(amount)}</span>
             <span className="text-xs text-muted-foreground block">{percentage.toFixed(1)}%</span>
           </div>
-          <Button 
-            size="icon" 
-            variant="ghost"
-            onClick={() => setEditOpen(true)}
-            data-testid={`button-edit-expense-${expense.id}`}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
+          {!readOnly && (
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={() => setEditOpen(true)}
+              data-testid={`button-edit-expense-${expense.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

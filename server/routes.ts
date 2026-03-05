@@ -14,6 +14,7 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import bcrypt from "bcrypt";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -31,16 +32,35 @@ export async function registerRoutes(
   };
 
   // ==================== AUTH ====================
-  app.post("/api/login", (req, res) => {
-    const { passphrase } = req.body;
-    // Default passphrase is "love-money" if not set in environment
-    const correctPassphrase = process.env.AUTH_PASSPHRASE || "love-money";
-    
-    if (passphrase === correctPassphrase) {
-      res.json({ success: true });
-    } else {
-      res.status(401).json({ error: "Invalid passphrase" });
+  app.post("/api/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const passwordMatch = await bcrypt.compare(password, user.password_hash);
+
+      if (passwordMatch) {
+        // Don't send the password hash to the client
+        const { password_hash, ...userWithoutPassword } = user;
+        res.json({ success: true, user: userWithoutPassword });
+      } else {
+        res.status(401).json({ error: "Invalid credentials" });
+      }
+    } catch (error) {
+      handleError(res, error);
     }
+  });
+
+  // ==================== HEALTH CHECK ====================
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok" });
   });
 
   // ==================== ACCOUNTS ====================

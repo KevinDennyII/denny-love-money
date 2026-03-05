@@ -1,12 +1,20 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { formatCurrency } from "@/lib/formatters";
 import { type Expense } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
 import { ExpenseCard } from "./expense-card";
 
-export function BudgetCategory({ category, totalBudget }: { category: any, totalBudget: number }) {
+interface BudgetCategoryProps {
+  category: any;
+  totalBudget: number;
+  onAddExpense: (category: any) => void;
+}
+
+export function BudgetCategory({ category, totalBudget, onAddExpense }: BudgetCategoryProps) {
+  const { readOnly } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
   const categoryTotal = category.expenses.reduce((sum: number, e: Expense) => sum + parseFloat(e.budgetedAmount as string), 0);
   const Icon = category.icon;
@@ -26,6 +34,10 @@ export function BudgetCategory({ category, totalBudget }: { category: any, total
             </h2>
           </Button>
         </CollapsibleTrigger>
+        <Button variant="outline" size="sm" className="h-7" onClick={() => onAddExpense(category)} disabled={readOnly}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Expense
+        </Button>
       </div>
       <CollapsibleContent className="space-y-1 pl-4 border-l-2 border-muted ml-2">
         {category.expenses.map((expense: Expense) => (

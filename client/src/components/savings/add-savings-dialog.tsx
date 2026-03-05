@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -17,6 +18,7 @@ import { savingsFormSchema, type SavingsFormValues } from "./schemas";
 export function AddSavingsDialog({ accounts }: { accounts: Account[] }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<SavingsFormValues>({
     resolver: zodResolver(savingsFormSchema),
@@ -58,7 +60,7 @@ export function AddSavingsDialog({ accounts }: { accounts: Account[] }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button data-testid="button-add-savings">
+        <Button data-testid="button-add-savings" disabled={readOnly}>
           <Plus className="h-4 w-4 mr-2" />
           Add Savings
         </Button>

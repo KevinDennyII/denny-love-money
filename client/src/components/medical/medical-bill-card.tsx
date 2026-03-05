@@ -1,10 +1,15 @@
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Stethoscope } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { CheckCircle2, Stethoscope, Pencil } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 import { type MedicalBill } from "@shared/schema";
 
+import { useState } from "react";
+
 export function MedicalBillCard({ bill }: { bill: MedicalBill }) {
+  const { readOnly } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
   const total = parseFloat(bill.totalAmount as string);
   const remaining = parseFloat(bill.amountRemaining as string);
   const paid = total - remaining;
@@ -63,13 +68,13 @@ export function MedicalBillCard({ bill }: { bill: MedicalBill }) {
 
       {/* Right: Amount */}
       <div className="text-right w-full sm:w-auto shrink-0">
-        <div className={`text-xl font-bold ${bill.isPaidOff ? 'text-green-500' : 'text-red-500'}`}>
-          {formatCurrency(remaining)}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          remaining of {formatCurrency(total)}
-        </div>
-      </div>
+          <div className={`text-xl font-bold ${bill.isPaidOff ? 'text-green-500' : 'text-red-500'}`}>
+            {formatCurrency(remaining)}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            remaining of {formatCurrency(total)}
+          </div>
+                  </div>
     </div>
   );
 }

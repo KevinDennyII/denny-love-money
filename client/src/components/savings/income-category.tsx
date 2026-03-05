@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { type Income, type Account } from "@shared/schema";
 import { IncomeCard } from "./income-card";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function IncomeCategory({ title, icon, incomes, accounts, getAccount }: { 
   title: string; 
@@ -30,14 +31,16 @@ export function IncomeCategory({ title, icon, incomes, accounts, getAccount }: {
         </CollapsibleTrigger>
       </div>
       <CollapsibleContent className="space-y-4">
-        {incomes.map((income) => (
-          <IncomeCard 
-            key={income.id} 
-            income={income} 
-            account={getAccount(income.accountId)}
-            accounts={accounts}
-          />
-        ))}
+        <AnimatePresence>
+          {incomes.map((income) => (
+            <IncomeCard 
+              key={income.id} 
+              income={income} 
+              account={getAccount(income.accountId)}
+              accounts={accounts}
+            />
+          ))}
+        </AnimatePresence>
       </CollapsibleContent>
     </Collapsible>
   );

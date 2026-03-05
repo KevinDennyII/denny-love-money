@@ -11,14 +11,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type Asset, type InsertAsset } from "@shared/schema";
 import { formatCurrency } from "@/lib/formatters";
 import { OwnerBadge } from "@/components/owner-badge";
 import { assetFormSchema, type AssetFormValues, assetTypeIcons, assetTypeLabels } from "./schemas";
+import { motion } from "framer-motion";
 
 export function EditAssetDialog({ asset, onClose }: { asset: Asset; onClose: () => void }) {
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetFormSchema),
@@ -94,7 +97,7 @@ export function EditAssetDialog({ asset, onClose }: { asset: Asset; onClose: () 
               <FormItem>
                 <FormLabel>Asset Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Roth IRA" {...field} data-testid="input-edit-asset-name" />
+                  <Input placeholder="e.g., Roth IRA" {...field} data-testid="input-edit-asset-name" disabled={readOnly} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -108,7 +111,7 @@ export function EditAssetDialog({ asset, onClose }: { asset: Asset; onClose: () 
                 <FormItem>
                   <FormLabel>Value</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-asset-value" />
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-asset-value" disabled={readOnly} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -120,7 +123,7 @@ export function EditAssetDialog({ asset, onClose }: { asset: Asset; onClose: () 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={readOnly}>
                     <FormControl>
                       <SelectTrigger data-testid="select-edit-asset-type">
                         <SelectValue placeholder="Select type" />
@@ -146,7 +149,7 @@ export function EditAssetDialog({ asset, onClose }: { asset: Asset; onClose: () 
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Owner</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""}>
+                <Select onValueChange={field.onChange} value={field.value || ""} disabled={readOnly}>
                   <FormControl>
                     <SelectTrigger data-testid="select-edit-asset-owner">
                       <SelectValue placeholder="Select owner" />
@@ -169,23 +172,25 @@ export function EditAssetDialog({ asset, onClose }: { asset: Asset; onClose: () 
               <FormItem>
                 <FormLabel>Notes</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Optional notes about this asset" {...field} value={field.value || ""} data-testid="input-edit-asset-notes" />
+                  <Textarea placeholder="Optional notes about this asset" {...field} value={field.value || ""} data-testid="input-edit-asset-notes" disabled={readOnly} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
           <DialogFooter className="flex justify-between gap-2">
-            <Button 
-              type="button" 
-              variant="destructive" 
-              onClick={() => deleteMutation.mutate()}
-              disabled={deleteMutation.isPending}
-              data-testid="button-delete-asset"
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </Button>
-            <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-asset">
+            {!readOnly && (
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                data-testid="button-delete-asset"
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            )}
+            <Button type="submit" disabled={updateMutation.isPending || readOnly} data-testid="button-save-asset">
               {updateMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -197,11 +202,12 @@ export function EditAssetDialog({ asset, onClose }: { asset: Asset; onClose: () 
 
 export function AssetCard({ asset }: { asset: Asset }) {
   const [editOpen, setEditOpen] = useState(false);
+  const { readOnly } = useAuth();
   const Icon = assetTypeIcons[asset.assetType] || Building;
   const value = parseFloat(asset.value as string);
 
   return (
-    <>
+    <motion.div layout>
       <div 
         className="flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all group"
         data-testid={`card-asset-${asset.id}`}
@@ -234,20 +240,22 @@ export function AssetCard({ asset }: { asset: Asset }) {
               <p className="text-xs text-muted-foreground max-w-[200px] truncate">{asset.notes}</p>
             )}
           </div>
-          <Button 
-            size="icon" 
-            variant="ghost" 
-            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => setEditOpen(true)}
-            data-testid={`button-edit-asset-${asset.id}`}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
+          {!readOnly && (
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => setEditOpen(true)}
+              data-testid={`button-edit-asset-${asset.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <EditAssetDialog asset={asset} onClose={() => setEditOpen(false)} />
       </Dialog>
-    </>
+    </motion.div>
   );
 }

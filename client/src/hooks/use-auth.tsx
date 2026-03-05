@@ -2,58 +2,68 @@ import { createContext, ReactNode, useContext, useState, useEffect } from "react
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { User } from "@shared/schema";
+
+interface LoginResponse {
+  success: boolean;
+  user: User;
+}
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (passphrase: string) => Promise<void>;
+  user: User | null;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  readOnly: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user was previously authenticated
-    const storedAuth = sessionStorage.getItem("denny-money-auth");
-    if (storedAuth === "true") {
+    const storedUser = sessionStorage.getItem("denny-money-user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
       setIsAuthenticated(true);
     }
     setIsLoading(false);
   }, []);
 
-  const login = async (passphrase: string) => {
+  const login = async (username: string, password: string) => {
     try {
-      // We'll verify against the server to keep the passphrase secret-ish
-      // (though for now we might just check locally if server route isn't ready, 
-      // but plan is to use server)
-      await apiRequest("POST", "/api/login", { passphrase });
+      const response = await apiRequest("POST", "/api/login", { username, password });
+      const { user: loggedInUser } = await response.json();
       
-      sessionStorage.setItem("denny-money-auth", "true");
+      
+      sessionStorage.setItem("denny-money-user", JSON.stringify(loggedInUser));
+      setUser(loggedInUser);
       setIsAuthenticated(true);
-      // setLocation("/") is handled by the component reacting to isAuthenticated change
+
       toast({
-        title: "Welcome back!",
+        title: `Welcome back, ${loggedInUser.username}! `,
         description: "Access granted to the treasury.",
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Access Denied",
-        description: "That's not the secret passphrase!",
+        description: "Invalid username or password.",
       });
       throw error;
     }
   };
 
   const logout = () => {
-    sessionStorage.removeItem("denny-money-auth");
+    sessionStorage.removeItem("denny-money-user");
     setIsAuthenticated(false);
+    setUser(null);
     setLocation("/auth");
     toast({
       title: "Logged out",
@@ -61,8 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const readOnly = user?.role !== 'admin';
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, isLoading, readOnly }}>
       {children}
     </AuthContext.Provider>
   );

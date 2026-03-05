@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus } from "lucide-react";
+import { Plus, PlusCircle } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type InsertIncome, type Account } from "@shared/schema";
 import { incomeFormSchema, type IncomeFormValues } from "./schemas";
@@ -17,6 +18,7 @@ import { incomeFormSchema, type IncomeFormValues } from "./schemas";
 export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<IncomeFormValues>({
     resolver: zodResolver(incomeFormSchema),
@@ -59,8 +61,8 @@ export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button data-testid="button-add-income">
-          <Plus className="h-4 w-4 mr-2" />
+        <Button data-testid="button-add-income" disabled={readOnly}>
+          <PlusCircle className="mr-2 h-4 w-4" />
           Add Income
         </Button>
       </DialogTrigger>
@@ -161,7 +163,7 @@ export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
               )}
             />
             <DialogFooter>
-              <Button type="submit" disabled={mutation.isPending} data-testid="button-submit-income">
+              <Button type="submit" disabled={mutation.isPending || readOnly} data-testid="button-submit-income">
                 {mutation.isPending ? "Adding..." : "Add Income"}
               </Button>
             </DialogFooter>

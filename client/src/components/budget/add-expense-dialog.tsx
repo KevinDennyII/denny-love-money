@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type InsertExpense } from "@shared/schema";
 import { expenseFormSchema, type ExpenseFormValues } from "./schemas";
@@ -17,6 +18,7 @@ import { expenseFormSchema, type ExpenseFormValues } from "./schemas";
 export function AddExpenseDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
@@ -60,7 +62,7 @@ export function AddExpenseDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button data-testid="button-add-expense">
+        <Button data-testid="button-add-expense" disabled={readOnly}>
           <Plus className="h-4 w-4 mr-2" />
           Add Expense
         </Button>

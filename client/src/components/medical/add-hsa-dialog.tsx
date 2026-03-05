@@ -13,10 +13,12 @@ import { Plus } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type InsertHsaPayback } from "@shared/schema";
 import { hsaFormSchema, type HsaFormValues } from "./schemas";
+import { useAuth } from "@/hooks/use-auth";
 
 export function AddHsaDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<HsaFormValues>({
     resolver: zodResolver(hsaFormSchema),
@@ -61,7 +63,7 @@ export function AddHsaDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" data-testid="button-add-hsa">
+        <Button variant="outline" data-testid="button-add-hsa" disabled={readOnly}>
           <Plus className="h-4 w-4 mr-2" />
           Add HSA Payback
         </Button>

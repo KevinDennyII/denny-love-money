@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,6 +16,7 @@ import { type HsaPayback, type InsertHsaPayback } from "@shared/schema";
 import { hsaFormSchema, type HsaFormValues } from "./schemas";
 
 export function HsaPaybackCard({ payback }: { payback: HsaPayback }) {
+  const { readOnly } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
@@ -144,7 +146,7 @@ export function HsaPaybackCard({ payback }: { payback: HsaPayback }) {
             />
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-              <Button type="submit" disabled={updateMutation.isPending}>Save</Button>
+              {!readOnly && <Button type="submit" disabled={updateMutation.isPending}>Save</Button>}
             </div>
           </form>
         </Form>
@@ -172,12 +174,16 @@ export function HsaPaybackCard({ payback }: { payback: HsaPayback }) {
           {formatCurrency(payback.amount)}
         </span>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)}>
-            <Pencil className="h-4 w-4 text-muted-foreground" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate()}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          {!readOnly && (
+            <>
+              <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)}>
+                <Pencil className="h-4 w-4 text-muted-foreground" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate()}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

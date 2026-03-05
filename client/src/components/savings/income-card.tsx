@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,9 +16,11 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type Income, type InsertIncome, type Account } from "@shared/schema";
 import { incomeFormSchema, type IncomeFormValues } from "./schemas";
 import { formatCurrency } from "@/lib/formatters";
+import { motion } from "framer-motion";
 
 function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accounts: Account[]; onClose: () => void }) {
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<IncomeFormValues>({
     resolver: zodResolver(incomeFormSchema),
@@ -94,7 +97,7 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
               <FormItem>
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Salary" {...field} data-testid="input-edit-income-name" />
+                  <Input placeholder="e.g., Salary" {...field} data-testid="input-edit-income-name" disabled={readOnly} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -108,7 +111,7 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
                 <FormItem>
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-income-amount" />
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-income-amount" disabled={readOnly} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -120,7 +123,7 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Frequency</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={readOnly}>
                     <FormControl>
                       <SelectTrigger data-testid="select-edit-income-frequency">
                         <SelectValue placeholder="Select" />
@@ -143,7 +146,7 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Deposit Account</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""}>
+                <Select onValueChange={field.onChange} value={field.value || ""} disabled={readOnly}>
                   <FormControl>
                     <SelectTrigger data-testid="select-edit-income-account">
                       <SelectValue placeholder="Select account" />
@@ -168,23 +171,25 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
               <FormItem>
                 <FormLabel>Notes</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Optional notes" {...field} value={field.value || ""} data-testid="input-edit-income-notes" />
+                  <Textarea placeholder="Optional notes" {...field} value={field.value || ""} data-testid="input-edit-income-notes" disabled={readOnly} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
           <DialogFooter className="flex justify-between gap-2">
-            <Button 
-              type="button" 
-              variant="destructive" 
-              onClick={() => deleteMutation.mutate()}
-              disabled={deleteMutation.isPending}
-              data-testid="button-delete-income"
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </Button>
-            <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-income">
+            {!readOnly && (
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                data-testid="button-delete-income"
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            )}
+            <Button type="submit" disabled={updateMutation.isPending || readOnly} data-testid="button-save-income">
               {updateMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -196,10 +201,11 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
 
 export function IncomeCard({ income, account, accounts }: { income: Income; account?: Account; accounts: Account[] }) {
   const [editOpen, setEditOpen] = useState(false);
+  const { readOnly } = useAuth();
   const amount = parseFloat(income.amount as string);
 
   return (
-    <>
+    <motion.div layout>
       <div 
         className="group flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all"
         data-testid={`card-income-${income.id}`}
@@ -225,20 +231,22 @@ export function IncomeCard({ income, account, accounts }: { income: Income; acco
             <Badge variant="outline" className="mt-1">{income.frequency}</Badge>
           </div>
           
-          <Button 
-            size="icon" 
-            variant="ghost" 
-            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => setEditOpen(true)}
-            data-testid={`button-edit-income-${income.id}`}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
+          {!readOnly && (
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => setEditOpen(true)}
+              data-testid={`button-edit-income-${income.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <EditIncomeDialog income={income} accounts={accounts} onClose={() => setEditOpen(false)} />
       </Dialog>
-    </>
+    </motion.div>
   );
 }

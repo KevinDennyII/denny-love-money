@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -16,6 +17,7 @@ import { medicalBillFormSchema, type MedicalBillFormValues } from "./schemas";
 export function AddMedicalBillDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<MedicalBillFormValues>({
     resolver: zodResolver(medicalBillFormSchema),
@@ -61,7 +63,7 @@ export function AddMedicalBillDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button data-testid="button-add-medical-bill">
+        <Button data-testid="button-add-medical-bill" disabled={readOnly}>
           <Plus className="h-4 w-4 mr-2" />
           Add Medical Bill
         </Button>

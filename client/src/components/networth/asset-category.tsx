@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { formatCurrency } from "@/lib/formatters";
 import { type Asset, type Debt } from "@shared/schema";
 import { AssetCard } from "./asset-card";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function AssetCategory({ title, icon: Icon, assets }: { title: string, icon: any, assets: Asset[] }) {
   const [isOpen, setIsOpen] = useState(true);
@@ -30,9 +31,11 @@ export function AssetCategory({ title, icon: Icon, assets }: { title: string, ic
         </CollapsibleTrigger>
       </div>
       <CollapsibleContent className="space-y-2 pl-4 border-l-2 border-muted ml-2">
-        {assets.map((asset) => (
-          <AssetCard key={asset.id} asset={asset} />
-        ))}
+        <AnimatePresence>
+          {assets.map((asset) => (
+            <AssetCard key={asset.id} asset={asset} />
+          ))}
+        </AnimatePresence>
       </CollapsibleContent>
     </Collapsible>
   );

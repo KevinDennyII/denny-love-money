@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,9 +16,11 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type SavingsAllocation, type InsertSavingsAllocation, type Account } from "@shared/schema";
 import { savingsFormSchema, type SavingsFormValues } from "./schemas";
 import { formatCurrency } from "@/lib/formatters";
+import { motion } from "framer-motion";
 
 function EditSavingsDialog({ allocation, accounts, onClose }: { allocation: SavingsAllocation; accounts: Account[]; onClose: () => void }) {
   const { toast } = useToast();
+  const { readOnly } = useAuth();
 
   const form = useForm<SavingsFormValues>({
     resolver: zodResolver(savingsFormSchema),
@@ -93,7 +96,7 @@ function EditSavingsDialog({ allocation, accounts, onClose }: { allocation: Savi
               <FormItem>
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Emergency Fund" {...field} data-testid="input-edit-savings-name" />
+                  <Input placeholder="e.g., Emergency Fund" {...field} data-testid="input-edit-savings-name" disabled={readOnly} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -106,7 +109,7 @@ function EditSavingsDialog({ allocation, accounts, onClose }: { allocation: Savi
               <FormItem>
                 <FormLabel>Monthly Amount</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-savings-amount" />
+                  <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-savings-amount" disabled={readOnly} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -118,7 +121,7 @@ function EditSavingsDialog({ allocation, accounts, onClose }: { allocation: Savi
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Account (Optional)</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""}>
+                <Select onValueChange={field.onChange} value={field.value || ""} disabled={readOnly}>
                   <FormControl>
                     <SelectTrigger data-testid="select-edit-savings-account">
                       <SelectValue placeholder="Select account" />
@@ -143,23 +146,25 @@ function EditSavingsDialog({ allocation, accounts, onClose }: { allocation: Savi
               <FormItem>
                 <FormLabel>Notes</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Optional notes" {...field} value={field.value || ""} data-testid="input-edit-savings-notes" />
+                  <Textarea placeholder="Optional notes" {...field} value={field.value || ""} data-testid="input-edit-savings-notes" disabled={readOnly} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
           <DialogFooter className="flex justify-between gap-2">
-            <Button 
-              type="button" 
-              variant="destructive" 
-              onClick={() => deleteMutation.mutate()}
-              disabled={deleteMutation.isPending}
-              data-testid="button-delete-savings"
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </Button>
-            <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-savings">
+            {!readOnly && (
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                data-testid="button-delete-savings"
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            )}
+            <Button type="submit" disabled={updateMutation.isPending || readOnly} data-testid="button-save-savings">
               {updateMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -170,11 +175,12 @@ function EditSavingsDialog({ allocation, accounts, onClose }: { allocation: Savi
 }
 
 export function SavingsCard({ allocation, account, accounts }: { allocation: SavingsAllocation; account?: Account; accounts: Account[] }) {
+  const { readOnly } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const amount = parseFloat(allocation.amount as string);
 
   return (
-    <>
+    <motion.div layout>
       <div 
         className="group flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all"
         data-testid={`card-savings-${allocation.id}`}
@@ -200,20 +206,22 @@ export function SavingsCard({ allocation, account, accounts }: { allocation: Sav
             <p className="text-xs text-muted-foreground">per month</p>
           </div>
           
-          <Button 
-            size="icon" 
-            variant="ghost" 
-            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => setEditOpen(true)}
-            data-testid={`button-edit-savings-${allocation.id}`}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
+          {!readOnly && (
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => setEditOpen(true)}
+              data-testid={`button-edit-savings-${allocation.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <EditSavingsDialog allocation={allocation} accounts={accounts} onClose={() => setEditOpen(false)} />
       </Dialog>
-    </>
+    </motion.div>
   );
 }

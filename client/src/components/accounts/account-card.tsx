@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type Account, type InsertAccount } from "@shared/schema";
@@ -227,6 +228,7 @@ export function EditAccountDialog({ account, onClose }: { account: Account; onCl
 }
 
 export function AccountCard({ account }: { account: AccountDisplay }) {
+  const { readOnly } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const Icon = accountTypeIcons[account.accountType] || Building2;
   const balance = parseFloat(account.currentBalance as string);
@@ -279,13 +281,14 @@ export function AccountCard({ account }: { account: AccountDisplay }) {
             </Badge>
           </div>
           
-          {!account.isDebt && (
+          {!readOnly && (
             <Button 
               size="icon" 
               variant="ghost" 
               className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
               onClick={() => setEditOpen(true)}
               data-testid={`button-edit-account-${account.id}`}
+              disabled={account.isDebt}
             >
               <Pencil className="h-4 w-4" />
             </Button>

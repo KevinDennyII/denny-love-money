@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,8 +14,14 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type InsertExpense } from "@shared/schema";
 import { expenseFormSchema, type ExpenseFormValues } from "./schemas";
 
-export function AddExpenseDialog() {
-  const [open, setOpen] = useState(false);
+interface AddExpenseDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  categoryName: string | null;
+  categories: { name: string; icon: React.ElementType; expenses: any[]; color: string }[];
+}
+
+export function AddExpenseDialog({ open, onOpenChange, categoryName, categories }: AddExpenseDialogProps) {
   const { toast } = useToast();
   const { readOnly } = useAuth();
 
@@ -25,13 +30,22 @@ export function AddExpenseDialog() {
     defaultValues: {
       name: "",
       budgetedAmount: "",
+      category: "",
       paymentMethod: "",
-      frequency: "monthly",
       dueDay: undefined,
       notes: "",
       isActive: true,
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset();
+      if (categoryName) {
+        form.setValue("category", categoryName);
+      }
+    }
+  }, [open, categoryName, form]);
 
   const mutation = useMutation({
     mutationFn: async (data: InsertExpense) => {
@@ -43,8 +57,7 @@ export function AddExpenseDialog() {
         title: "Expense added",
         description: "Your budget item has been added successfully.",
       });
-      setOpen(false);
-      form.reset();
+      onOpenChange(false);
     },
     onError: () => {
       toast({
@@ -60,13 +73,7 @@ export function AddExpenseDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button data-testid="button-add-expense" disabled={readOnly}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Expense
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Add Budget Item</DialogTitle>
@@ -105,21 +112,22 @@ export function AddExpenseDialog() {
               />
               <FormField
                 control={form.control}
-                name="frequency"
+                name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Frequency</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger data-testid="select-frequency">
-                          <SelectValue placeholder="Select" />
+                        <SelectTrigger data-testid="select-category">
+                          <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="bi-monthly">Bi-Monthly</SelectItem>
-                        <SelectItem value="quarterly">Quarterly</SelectItem>
-                        <SelectItem value="yearly">Yearly</SelectItem>
+                        {categories.map(option => (
+                          <SelectItem key={option.name} value={option.name}>
+                            {option.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

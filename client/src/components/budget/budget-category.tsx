@@ -10,10 +10,11 @@ import { ExpenseCard } from "./expense-card";
 interface BudgetCategoryProps {
   category: any;
   totalBudget: number;
-  onAddExpense: (category: any) => void;
+  onAddExpense: () => void;
+  categories: any[];
 }
 
-export function BudgetCategory({ category, totalBudget, onAddExpense }: BudgetCategoryProps) {
+export function BudgetCategory({ category, totalBudget, onAddExpense, categories }: BudgetCategoryProps) {
   const { readOnly } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
   const categoryTotal = category.expenses.reduce((sum: number, e: Expense) => sum + parseFloat(e.budgetedAmount as string), 0);
@@ -34,14 +35,14 @@ export function BudgetCategory({ category, totalBudget, onAddExpense }: BudgetCa
             </h2>
           </Button>
         </CollapsibleTrigger>
-        <Button variant="outline" size="sm" className="h-7" onClick={() => onAddExpense(category)} disabled={readOnly}>
+        <Button variant="outline" size="sm" className="h-7" onClick={onAddExpense} disabled={readOnly}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Expense
         </Button>
       </div>
       <CollapsibleContent className="space-y-1 pl-4 border-l-2 border-muted ml-2">
         {category.expenses.map((expense: Expense) => (
-          <ExpenseCard key={expense.id} expense={expense} totalBudget={totalBudget} />
+          <ExpenseCard key={expense.id} expense={expense} totalBudget={totalBudget} categories={categories} />
         ))}
       </CollapsibleContent>
     </Collapsible>

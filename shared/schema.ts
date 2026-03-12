@@ -68,7 +68,7 @@ export const expenses = pgTable("expenses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   budgetedAmount: decimal("budgeted_amount", { precision: 12, scale: 2 }).notNull(),
-  categoryId: varchar("category_id").references(() => budgetCategories.id),
+  category: text("category"),
   paymentMethod: text("payment_method"), // which account pays this
   frequency: text("frequency").notNull().default("monthly"), // monthly, bi-monthly, yearly
   dueDay: integer("due_day"), // day of month when due

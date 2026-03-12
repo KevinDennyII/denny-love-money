@@ -24,5 +24,9 @@ export async function runMigrations() {
     ALTER TABLE assets ADD COLUMN IF NOT EXISTS last_updated TIMESTAMP DEFAULT NOW()
   `);
 
+  await db.execute(sql`
+    ALTER TABLE expenses ADD COLUMN IF NOT EXISTS category TEXT
+  `);
+
   console.log("Database migrations completed.");
 }

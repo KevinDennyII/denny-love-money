@@ -17,7 +17,7 @@ import { type Expense, type InsertExpense } from "@shared/schema";
 import { formatCurrency } from "@/lib/formatters";
 import { expenseFormSchema, type ExpenseFormValues } from "./schemas";
 
-export function EditExpenseDialog({ expense, onClose }: { expense: Expense; onClose: () => void }) {
+export function EditExpenseDialog({ expense, onClose, categories }: { expense: Expense; onClose: () => void; categories: any[] }) {
   const { toast } = useToast();
   const { readOnly } = useAuth();
 
@@ -26,6 +26,7 @@ export function EditExpenseDialog({ expense, onClose }: { expense: Expense; onCl
     defaultValues: {
       name: expense.name,
       budgetedAmount: expense.budgetedAmount?.toString() || "0",
+      category: expense.category || "",
       paymentMethod: expense.paymentMethod || "",
       frequency: expense.frequency,
       dueDay: expense.dueDay || undefined,
@@ -113,6 +114,30 @@ export function EditExpenseDialog({ expense, onClose }: { expense: Expense; onCl
                   <FormControl>
                     <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-expense-amount" />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-category">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.map(option => (
+                        <SelectItem key={option.name} value={option.name}>
+                          {option.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -227,7 +252,7 @@ export function EditExpenseDialog({ expense, onClose }: { expense: Expense; onCl
   );
 }
 
-export function ExpenseCard({ expense, totalBudget }: { expense: Expense; totalBudget: number }) {
+export function ExpenseCard({ expense, totalBudget, categories }: { expense: Expense; totalBudget: number; categories: any[] }) {
   const [editOpen, setEditOpen] = useState(false);
   const amount = parseFloat(expense.budgetedAmount as string);
   const percentage = totalBudget > 0 ? (amount / totalBudget) * 100 : 0;
@@ -280,7 +305,7 @@ export function ExpenseCard({ expense, totalBudget }: { expense: Expense; totalB
         </div>
       </div>
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <EditExpenseDialog expense={expense} onClose={() => setEditOpen(false)} />
+        <EditExpenseDialog expense={expense} onClose={() => setEditOpen(false)} categories={categories} />
       </Dialog>
     </>
   );

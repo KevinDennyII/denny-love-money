@@ -18,6 +18,7 @@ export function BudgetCategory({ category, totalBudget, onAddExpense, categories
   const { readOnly } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
   const categoryTotal = category.expenses.reduce((sum: number, e: Expense) => sum + parseFloat(e.budgetedAmount as string), 0);
+  const percentage = totalBudget > 0 ? (categoryTotal / totalBudget) * 100 : 0;
   const Icon = category.icon;
 
   return (
@@ -29,7 +30,7 @@ export function BudgetCategory({ category, totalBudget, onAddExpense, categories
               <Icon className={`h-5 w-5 ${category.color}`} />
               {category.name}
               <span className="text-muted-foreground font-normal text-sm ml-2">
-                ({formatCurrency(categoryTotal)})
+                {formatCurrency(categoryTotal)} ({percentage.toFixed(0)}%)
               </span>
               <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-auto ${isOpen ? "" : "-rotate-90"}`} />
             </h2>

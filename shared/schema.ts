@@ -32,7 +32,14 @@ export const incomes = pgTable("incomes", {
   isActive: boolean("is_active").notNull().default(true),
 });
 
-export const insertIncomeSchema = createInsertSchema(incomes).omit({ id: true });
+const optionalAccountIdSchema = z.preprocess(
+  (val) => (val === "" ? null : val),
+  z.string().nullable().optional(),
+);
+
+export const insertIncomeSchema = createInsertSchema(incomes).omit({ id: true }).extend({
+  accountId: optionalAccountIdSchema,
+});
 export type InsertIncome = z.infer<typeof insertIncomeSchema>;
 export type Income = typeof incomes.$inferSelect;
 
@@ -46,7 +53,9 @@ export const savingsAllocations = pgTable("savings_allocations", {
   isActive: boolean("is_active").notNull().default(true),
 });
 
-export const insertSavingsAllocationSchema = createInsertSchema(savingsAllocations).omit({ id: true });
+export const insertSavingsAllocationSchema = createInsertSchema(savingsAllocations).omit({ id: true }).extend({
+  accountId: optionalAccountIdSchema,
+});
 export type InsertSavingsAllocation = z.infer<typeof insertSavingsAllocationSchema>;
 export type SavingsAllocation = typeof savingsAllocations.$inferSelect;
 

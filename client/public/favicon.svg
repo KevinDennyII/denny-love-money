@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="7" fill="#16a34a"/>
+  <g transform="translate(5 6)" stroke="#f0fdf4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Body -->
+    <ellipse cx="11" cy="12" rx="9" ry="7.5" fill="#f0fdf4" stroke="none"/>
+    <!-- Snout -->
+    <ellipse cx="17.5" cy="12.5" rx="3" ry="2.4" fill="#f0fdf4" stroke="none"/>
+    <!-- Coin slot -->
+    <rect x="9" y="4" width="4" height="1.4" rx="0.7" fill="#16a34a"/>
+    <!-- Ear -->
+    <path d="M5.5 7.5 C3.5 5 1.5 5.5 1 8 C2.5 8.5 4.5 8 5.5 7.5 Z" fill="#f0fdf4" stroke="none"/>
+    <!-- Legs -->
+    <rect x="4" y="17.5" width="2.5" height="3.5" rx="1.25" fill="#f0fdf4" stroke="none"/>
+    <rect x="9" y="17.5" width="2.5" height="3.5" rx="1.25" fill="#f0fdf4" stroke="none"/>
+    <rect x="14" y="17.5" width="2.5" height="3.5" rx="1.25" fill="#f0fdf4" stroke="none"/>
+    <!-- Tail -->
+    <path d="M2.5 11 C0.5 9 0 6.5 1.5 5" fill="none"/>
+    <!-- Eye -->
+    <circle cx="13.5" cy="10.5" r="1" fill="#16a34a" stroke="none"/>
+    <!-- Nostrils -->
+    <circle cx="16.5" cy="12" r="0.55" fill="#16a34a" stroke="none"/>
+    <circle cx="18.5" cy="12" r="0.55" fill="#16a34a" stroke="none"/>
+    <!-- Dollar coin -->
+    <circle cx="11" cy="12.5" r="2.8" fill="#16a34a" stroke="none"/>
+    <path d="M11 10.8 V14.2 M10 11.3 H12 M10 13.2 H12" stroke="#f0fdf4" stroke-width="0.9"/>
+  </g>
+</svg>

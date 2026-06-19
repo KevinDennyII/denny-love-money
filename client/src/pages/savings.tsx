@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/formatters";
+import { getIncomeDisplayAmount } from "@/lib/income";
 import { PiggyBank, Wallet } from "lucide-react";
 import type { Account, Income, SavingsAllocation } from "@shared/schema";
 import { AddSavingsDialog } from "@/components/savings/add-savings-dialog";
@@ -25,13 +26,16 @@ export default function Savings() {
 
   const isLoading = accountsLoading || incomesLoading || savingsLoading;
 
-  const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount as string), 0);
-  const totalSavings = savings.reduce((sum, s) => sum + parseFloat(s.amount as string), 0);
-
   const getAccount = (id: string | null | undefined) => {
     if (!id) return undefined;
     return accounts.find(a => a.id === id);
   };
+
+  const totalIncome = incomes.reduce(
+    (sum, i) => sum + getIncomeDisplayAmount(i, getAccount(i.accountId)),
+    0,
+  );
+  const totalSavings = savings.reduce((sum, s) => sum + parseFloat(s.amount as string), 0);
 
   if (isLoading) {
     return (

@@ -16,6 +16,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type Income, type InsertIncome, type Account } from "@shared/schema";
 import { incomeFormSchema, type IncomeFormValues } from "./schemas";
 import { formatCurrency } from "@/lib/formatters";
+import { getIncomeDisplayAmount } from "@/lib/income";
 import { motion } from "framer-motion";
 
 function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accounts: Account[]; onClose: () => void }) {
@@ -33,6 +34,8 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
       isActive: income.isActive,
     },
   });
+
+  const linkedAccount = accounts.find(a => a.id === form.watch("accountId"));
 
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<InsertIncome>) => {
@@ -77,7 +80,14 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
   });
 
   const onSubmit = (data: IncomeFormValues) => {
-    updateMutation.mutate(data as InsertIncome);
+    const { amount: _amount, ...rest } = data;
+    const payload: InsertIncome = {
+      ...rest,
+      amount: linkedAccount
+        ? (linkedAccount.currentBalance as string)
+        : income.amount as string,
+    } as InsertIncome;
+    updateMutation.mutate(payload);
   };
 
   return (
@@ -106,19 +116,6 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-income-amount" disabled={readOnly} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="frequency"
               render={({ field }) => (
                 <FormItem>
@@ -139,6 +136,17 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
                 </FormItem>
               )}
             />
+            <FormItem>
+              <FormLabel>Amount</FormLabel>
+              <p className="text-sm font-medium pt-2" data-testid="text-edit-income-amount">
+                {linkedAccount
+                  ? formatCurrency(parseFloat(linkedAccount.currentBalance as string))
+                  : formatCurrency(parseFloat(income.amount as string))}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {linkedAccount ? "Synced from linked account" : "Update on the Accounts page"}
+              </p>
+            </FormItem>
           </div>
           <FormField
             control={form.control}
@@ -202,7 +210,7 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
 export function IncomeCard({ income, account, accounts }: { income: Income; account?: Account; accounts: Account[] }) {
   const [editOpen, setEditOpen] = useState(false);
   const { readOnly } = useAuth();
-  const amount = parseFloat(income.amount as string);
+  const amount = getIncomeDisplayAmount(income, account);
 
   return (
     <motion.div layout>

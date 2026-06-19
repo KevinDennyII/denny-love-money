@@ -12,7 +12,7 @@ export const savingsFormSchema = insertSavingsAllocationSchema.extend({
 });
 
 export const incomeFormSchema = insertIncomeSchema.extend({
-  amount: z.string().min(1, "Amount is required"),
+  amount: z.string().optional(),
   accountId: optionalAccountIdField,
 });
 

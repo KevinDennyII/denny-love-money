@@ -14,6 +14,7 @@ import { Plus, PlusCircle } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type InsertIncome, type Account } from "@shared/schema";
 import { incomeFormSchema, type IncomeFormValues } from "./schemas";
+import { formatCurrency } from "@/lib/formatters";
 
 export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
   const [open, setOpen] = useState(false);
@@ -31,6 +32,9 @@ export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
       isActive: true,
     },
   });
+
+  const selectedAccountId = form.watch("accountId");
+  const selectedAccount = accounts.find(a => a.id === selectedAccountId);
 
   const mutation = useMutation({
     mutationFn: async (data: InsertIncome) => {
@@ -55,7 +59,12 @@ export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
   });
 
   const onSubmit = (data: IncomeFormValues) => {
-    mutation.mutate(data as InsertIncome);
+    if (!selectedAccount) return;
+    mutation.mutate({
+      ...data,
+      accountId: selectedAccount.id,
+      amount: selectedAccount.currentBalance as string,
+    } as InsertIncome);
   };
 
   return (
@@ -91,19 +100,6 @@ export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-income-amount" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="frequency"
                 render={({ field }) => (
                   <FormItem>
@@ -124,6 +120,15 @@ export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
                   </FormItem>
                 )}
               />
+              <FormItem>
+                <FormLabel>Amount</FormLabel>
+                <p className="text-sm font-medium pt-2" data-testid="text-income-amount">
+                  {selectedAccount
+                    ? formatCurrency(parseFloat(selectedAccount.currentBalance as string))
+                    : "—"}
+                </p>
+                <p className="text-xs text-muted-foreground">Synced from linked account</p>
+              </FormItem>
             </div>
             <FormField
               control={form.control}
@@ -163,7 +168,11 @@ export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
               )}
             />
             <DialogFooter>
-              <Button type="submit" disabled={mutation.isPending || readOnly} data-testid="button-submit-income">
+              <Button
+                type="submit"
+                disabled={mutation.isPending || readOnly || !selectedAccount}
+                data-testid="button-submit-income"
+              >
                 {mutation.isPending ? "Adding..." : "Add Income"}
               </Button>
             </DialogFooter>

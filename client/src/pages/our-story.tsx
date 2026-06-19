@@ -20,7 +20,6 @@ export default function OurStory() {
             <video
               className="w-full"
               controls
-              autoPlay
               muted
               loop
               playsInline

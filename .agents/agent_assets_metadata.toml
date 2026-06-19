@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "06SzosmXkaCgEO3YVTOUV"
+uri = "file://attached_assets/generated_videos/denny-love-money-intro.mp4"
+type = "video"
+title = "Clip 1 — Denny Love Money Intro"
+
+[[outputs]]
+id = "6VVUCISE47pV4Jvnqupvo"
+uri = "file://attached_assets/generated_videos/denny-love-money-together.mp4"
+type = "video"
+title = "Clip 2 — Better Together"

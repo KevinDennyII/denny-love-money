@@ -21,6 +21,7 @@ import NetWorth from "@/pages/networth";
 import Settings from "@/pages/settings";
 import DebtPayoff from "@/pages/debt-payoff";
 import AuthPage from "@/pages/auth";
+import OurStory from "@/pages/our-story";
 import React from "react";
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -91,6 +92,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/our-story" component={OurStory} />
       
       {/* Protected Routes */}
       <Route path="/">

@@ -162,8 +162,8 @@ export default function PrivacyTransactions() {
             Privacy Card Transactions
           </h1>
           <p className="text-muted-foreground">
-            Approved purchases from your shared Privacy.com cards. Auto-refreshes while this page is open;
-            enable the Privacy webhook on Replit for near real-time updates.
+            A clear list of what was bought with your Privacy cards—store names and amounts, not bank jargon.
+            This page updates on its own while you keep it open.
           </p>
         </div>
         <Button

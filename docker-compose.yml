@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    container_name: denny-love-money-db
+    ports:
+      # Host 5433 avoids clashing with Homebrew Postgres on 5432
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: denny_love_money
+    volumes:
+      - denny_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d denny_love_money"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  denny_pg_data:

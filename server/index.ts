@@ -4,6 +4,7 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { seedDatabase } from "./seed";
 import { runMigrations } from "./migrate";
+import { startPrivacyAutoSync } from "./privacy-auto-sync";
 
 const app = express();
 const httpServer = createServer(app);
@@ -50,8 +51,22 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (capturedJsonResponse !== undefined) {
+        if (Array.isArray(capturedJsonResponse)) {
+          logLine += ` :: [array length=${capturedJsonResponse.length}]`;
+        } else if (
+          capturedJsonResponse &&
+          typeof capturedJsonResponse === "object" &&
+          Array.isArray((capturedJsonResponse as { transactions?: unknown }).transactions)
+        ) {
+          const body = capturedJsonResponse as { transactions: unknown[]; total?: number };
+          logLine += ` :: { transactions: ${body.transactions.length}, total: ${body.total ?? "?"} }`;
+        } else {
+          const serialized = JSON.stringify(capturedJsonResponse);
+          logLine += serialized.length > 300
+            ? ` :: ${serialized.slice(0, 300)}…`
+            : ` :: ${serialized}`;
+        }
       }
 
       log(logLine);
@@ -113,6 +128,7 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      startPrivacyAutoSync();
     },
   );
 })();

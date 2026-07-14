@@ -175,6 +175,33 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({ i
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Transaction = typeof transactions.$inferSelect;
 
+// Privacy.com virtual-card transactions (synced from API)
+export const privacyTransactions = pgTable("privacy_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  privacyToken: varchar("privacy_token", { length: 36 }).notNull().unique(),
+  created: timestamp("created").notNull(),
+  merchantDescriptor: text("merchant_descriptor").notNull(),
+  merchantCity: text("merchant_city"),
+  merchantState: text("merchant_state"),
+  merchantCountry: text("merchant_country"),
+  merchantMcc: text("merchant_mcc"),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  settledAmount: decimal("settled_amount", { precision: 12, scale: 2 }),
+  status: text("status").notNull(),
+  result: text("result").notNull(),
+  cardToken: varchar("card_token", { length: 36 }),
+  cardMemo: text("card_memo"),
+  cardLastFour: varchar("card_last_four", { length: 4 }),
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+});
+
+export const insertPrivacyTransactionSchema = createInsertSchema(privacyTransactions).omit({
+  id: true,
+  syncedAt: true,
+});
+export type InsertPrivacyTransaction = z.infer<typeof insertPrivacyTransactionSchema>;
+export type PrivacyTransaction = typeof privacyTransactions.$inferSelect;
+
 export const userRoleEnum = pgEnum('user_role', ['admin', 'user']);
 
 // Keep user schema for potential future auth

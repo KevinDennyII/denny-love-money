@@ -8,11 +8,11 @@ import {
   medicalBills, insertMedicalBillSchema, type MedicalBill, type InsertMedicalBill,
   hsaPaybacks, insertHsaPaybackSchema, type HsaPayback, type InsertHsaPayback,
   assets, insertAssetSchema, type Asset, type InsertAsset,
-  transactions, type Transaction, type InsertTransaction,
+  privacyTransactions, type PrivacyTransaction, type InsertPrivacyTransaction,
   users, type User, type InsertUser,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Accounts
@@ -70,6 +70,11 @@ export interface IStorage {
   createAsset(asset: InsertAsset): Promise<Asset>;
   updateAsset(id: string, asset: Partial<InsertAsset>): Promise<Asset | undefined>;
   deleteAsset(id: string): Promise<boolean>;
+
+  // Privacy.com transactions
+  getPrivacyTransactions(options?: { limit?: number }): Promise<PrivacyTransaction[]>;
+  countPrivacyTransactions(): Promise<number>;
+  upsertPrivacyTransactions(transactions: InsertPrivacyTransaction[]): Promise<number>;
 
   // Users (for future auth)
   getUsers(): Promise<User[]>;
@@ -279,6 +284,66 @@ export class DatabaseStorage implements IStorage {
   async deleteAsset(id: string): Promise<boolean> {
     const result = await db.delete(assets).where(eq(assets.id, id)).returning();
     return result.length > 0;
+  }
+
+  // Privacy.com transactions
+  async getPrivacyTransactions(options?: { limit?: number }): Promise<PrivacyTransaction[]> {
+    const query = db
+      .select()
+      .from(privacyTransactions)
+      .orderBy(desc(privacyTransactions.created));
+
+    if (options?.limit != null && options.limit > 0) {
+      return await query.limit(options.limit);
+    }
+
+    return await query;
+  }
+
+  async countPrivacyTransactions(): Promise<number> {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(privacyTransactions);
+    return row?.count ?? 0;
+  }
+
+  async upsertPrivacyTransactions(transactions: InsertPrivacyTransaction[]): Promise<number> {
+    if (transactions.length === 0) return 0;
+
+    const now = new Date();
+    let upserted = 0;
+
+    // Batch in chunks to avoid oversized statements
+    const chunkSize = 50;
+    for (let i = 0; i < transactions.length; i += chunkSize) {
+      const chunk = transactions.slice(i, i + chunkSize);
+      const result = await db
+        .insert(privacyTransactions)
+        .values(chunk.map((tx) => ({ ...tx, syncedAt: now })))
+        .onConflictDoUpdate({
+          target: privacyTransactions.privacyToken,
+          set: {
+            created: sql`excluded.created`,
+            merchantDescriptor: sql`excluded.merchant_descriptor`,
+            merchantCity: sql`excluded.merchant_city`,
+            merchantState: sql`excluded.merchant_state`,
+            merchantCountry: sql`excluded.merchant_country`,
+            merchantMcc: sql`excluded.merchant_mcc`,
+            amount: sql`excluded.amount`,
+            settledAmount: sql`excluded.settled_amount`,
+            status: sql`excluded.status`,
+            result: sql`excluded.result`,
+            cardToken: sql`excluded.card_token`,
+            cardMemo: sql`excluded.card_memo`,
+            cardLastFour: sql`excluded.card_last_four`,
+            syncedAt: now,
+          },
+        })
+        .returning({ id: privacyTransactions.id });
+      upserted += result.length;
+    }
+
+    return upserted;
   }
 
   // Users

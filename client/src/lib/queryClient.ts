@@ -1,9 +1,31 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+/** Prefer API `{ error: string }` bodies over opaque status text. */
+export async function getErrorMessage(res: Response): Promise<string> {
+  const text = await res.text();
+  if (!text) return res.statusText || `Request failed (${res.status})`;
+
+  try {
+    const json = JSON.parse(text) as { error?: unknown; message?: unknown };
+    if (typeof json.error === "string" && json.error.trim()) return json.error;
+    if (typeof json.message === "string" && json.message.trim()) return json.message;
+  } catch {
+    // not JSON
+  }
+
+  return text.length > 300 ? `${text.slice(0, 300)}…` : text;
+}
+
+export function toErrorMessage(error: unknown, fallback = "Something went wrong"): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+  return fallback;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    const message = await getErrorMessage(res);
+    throw new Error(`${res.status}: ${message}`);
   }
 }
 

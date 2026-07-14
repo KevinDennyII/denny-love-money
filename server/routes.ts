@@ -15,6 +15,8 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
+import { fetchApprovedPrivacyTransactions, mapPrivacyTransaction, isPrivacyApiTransaction, verifyPrivacyWebhookHmac } from "./privacy";
+import { syncRecentPrivacyTransactions } from "./privacy-auto-sync";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -28,7 +30,17 @@ export async function registerRoutes(
       return res.status(400).json({ error: validationError.message });
     }
     console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : "Internal server error";
+    // Surface actionable Privacy/config errors without a generic 500 blanket
+    const isConfigOrUpstream =
+      typeof message === "string" &&
+      (message.includes("PRIVACY_API_KEY") ||
+        message.includes("Privacy API") ||
+        message.startsWith("Privacy API error"));
+    return res.status(isConfigOrUpstream ? 502 : 500).json({ error: message });
   };
 
   // ==================== AUTH ====================
@@ -489,6 +501,100 @@ export async function registerRoutes(
       res.status(204).send();
     } catch (error) {
       handleError(res, error);
+    }
+  });
+
+  // ==================== PRIVACY TRANSACTIONS ====================
+  app.get("/api/privacy/transactions", async (req, res) => {
+    try {
+      const rawLimit = req.query.limit;
+      const parsedLimit =
+        rawLimit === "all"
+          ? undefined
+          : Math.min(
+              Math.max(parseInt(String(rawLimit ?? "200"), 10) || 200, 1),
+              1000,
+            );
+
+      const [transactions, total] = await Promise.all([
+        storage.getPrivacyTransactions({ limit: parsedLimit }),
+        storage.countPrivacyTransactions(),
+      ]);
+
+      res.json({
+        transactions,
+        total,
+        limit: parsedLimit ?? total,
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post("/api/privacy/sync", async (req, res) => {
+    try {
+      if (!process.env.PRIVACY_API_KEY?.trim()) {
+        return res.status(503).json({ error: "Privacy API key is not configured" });
+      }
+
+      const mode = String(req.query.mode ?? req.body?.mode ?? "full");
+      if (mode === "recent") {
+        const days = Number(req.query.days ?? req.body?.days ?? 7);
+        const result = await syncRecentPrivacyTransactions(Number.isFinite(days) ? days : 7);
+        return res.json({
+          success: true,
+          mode: "recent",
+          ...result,
+        });
+      }
+
+      const remote = await fetchApprovedPrivacyTransactions();
+      const mapped = remote.map(mapPrivacyTransaction);
+      const upserted = await storage.upsertPrivacyTransactions(mapped);
+
+      res.json({
+        success: true,
+        mode: "full",
+        fetched: remote.length,
+        upserted,
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Privacy.com transaction webhooks (Enable in Privacy account settings)
+  // URL example: https://your-replit-app.replit.app/api/privacy/webhook
+  app.post("/api/privacy/webhook", async (req, res) => {
+    try {
+      const payload = req.body;
+      const hmacHeader =
+        (req.get("X-Privacy-HMAC") || req.get("x-privacy-hmac") || undefined) ?? undefined;
+      const skipHmac = process.env.PRIVACY_WEBHOOK_SKIP_HMAC === "true";
+
+      if (!skipHmac && !verifyPrivacyWebhookHmac(payload, hmacHeader, req.rawBody as Buffer | undefined)) {
+        console.warn("Privacy webhook rejected: invalid HMAC");
+        // Still 200 for unknown attackers would hide failures; Privacy retries on non-200.
+        return res.status(401).json({ error: "Invalid webhook signature" });
+      }
+
+      if (!isPrivacyApiTransaction(payload)) {
+        // ACK malformed to avoid infinite retry storms for unexpected shapes we can't store
+        console.warn("Privacy webhook: unrecognized payload shape");
+        return res.status(200).json({ ok: true, ignored: true });
+      }
+
+      // Keep DB aligned with the approved feed used by Sync
+      if (payload.result && payload.result !== "APPROVED") {
+        return res.status(200).json({ ok: true, ignored: true, reason: "not_approved" });
+      }
+
+      await storage.upsertPrivacyTransactions([mapPrivacyTransaction(payload)]);
+      return res.status(200).json({ ok: true });
+    } catch (error) {
+      console.error("Privacy webhook error:", error);
+      // Non-200 triggers Privacy retry with backoff
+      return res.status(500).json({ error: "Webhook processing failed" });
     }
   });
 

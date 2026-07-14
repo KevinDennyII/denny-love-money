@@ -22,6 +22,7 @@ import Settings from "@/pages/settings";
 import DebtPayoff from "@/pages/debt-payoff";
 import AuthPage from "@/pages/auth";
 import OurStory from "@/pages/our-story";
+import PrivacyTransactions from "@/pages/privacy-transactions";
 import React from "react";
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -118,6 +119,9 @@ function Router() {
       </Route>
       <Route path="/debt-payoff">
         <ProtectedRoute component={DebtPayoff} />
+      </Route>
+      <Route path="/privacy-transactions">
+        <ProtectedRoute component={PrivacyTransactions} />
       </Route>
       <Route path="/settings">
         <AdminRoute component={Settings} />

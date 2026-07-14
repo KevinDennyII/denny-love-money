@@ -1,7 +1,7 @@
-
 import { db, pool } from '../server/db';
 import { 
-  transactions, 
+  transactions,
+  privacyTransactions,
   expenses, 
   incomes, 
   savingsAllocations, 
@@ -13,15 +13,14 @@ import {
   accounts,
   users 
 } from '@shared/schema';
-import { sql } from 'drizzle-orm';
 
 async function reset() {
   console.log('🗑️  Resetting database...');
 
   try {
-    // Disable triggers temporarily to avoid foreign key constraints issues if needed
-    // But better to just delete in order
-    
+    console.log('Deleting privacy transactions...');
+    await db.delete(privacyTransactions);
+
     console.log('Deleting transactions...');
     await db.delete(transactions);
     

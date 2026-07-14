@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Settings,
   Calculator,
+  Lock,
 } from "lucide-react";
 import {
   Sidebar,
@@ -53,6 +54,11 @@ const mainMenuItems = [
 ];
 
 const trackingMenuItems = [
+  {
+    title: "Privacy Card Transactions",
+    url: "/privacy-transactions",
+    icon: Lock,
+  },
   {
     title: "Medical & HSA",
     url: "/medical",

@@ -1,5 +1,9 @@
 import * as React from "react"
 
+/**
+ * Comeau “no-device-land” phone/tablet split sits near 550px; we keep 768 so
+ * tablets still get the sheet sidebar while phones use bottom nav + sheet.
+ */
 const MOBILE_BREAKPOINT = 768
 
 export function useIsMobile() {

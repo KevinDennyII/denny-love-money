@@ -60,7 +60,7 @@ export default function Debts() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight" data-testid="text-page-title">Debts</h1>
+          <h1 className="font-bold tracking-tight" data-testid="text-page-title">Debts</h1>
           <p className="text-muted-foreground">Track and pay down your debts</p>
         </div>
         <AddDebtDialog />

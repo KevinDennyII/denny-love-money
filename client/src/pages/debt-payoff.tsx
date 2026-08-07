@@ -108,7 +108,7 @@ export default function DebtPayoff() {
   return (
     <div className="container mx-auto p-4 space-y-8 max-w-5xl">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Debt Payoff Planner</h1>
+        <h1 className="font-bold tracking-tight">Debt Payoff Planner</h1>
         <p className="text-muted-foreground">
           Optimize your monthly payments based on your available budget surplus.
         </p>

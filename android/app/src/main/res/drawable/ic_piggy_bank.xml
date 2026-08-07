@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Piggy bank mark — mirrors client/public/favicon.svg -->
+    <path
+        android:fillColor="#F0FDF4"
+        android:pathData="M54,38c-14,0 -26,9 -26,20c0,11 12,20 26,20s26,-9 26,-20c0,-11 -12,-20 -26,-20z" />
+    <path
+        android:fillColor="#F0FDF4"
+        android:pathData="M74,54c4,0 8,2 8,5s-4,5 -8,5 -6,-2 -6,-5 2,-5 6,-5z" />
+    <path
+        android:fillColor="#16A34A"
+        android:pathData="M49,42h10c1,0 1.5,0.7 1.5,1.5v1c0,0.8 -0.5,1.5 -1.5,1.5H49c-1,0 -1.5,-0.7 -1.5,-1.5v-1c0,-0.8 0.5,-1.5 1.5,-1.5z" />
+    <path
+        android:fillColor="#F0FDF4"
+        android:pathData="M34,44c-3,-4 -7,-3 -8,1c2,1 5,1 8,-1z" />
+    <path
+        android:fillColor="#F0FDF4"
+        android:pathData="M40,74h5v8c0,1.5 -1.5,3 -3,3h0c-1.5,0 -2,-1.5 -2,-3z" />
+    <path
+        android:fillColor="#F0FDF4"
+        android:pathData="M51,74h5v8c0,1.5 -1.5,3 -3,3h0c-1.5,0 -2,-1.5 -2,-3z" />
+    <path
+        android:fillColor="#F0FDF4"
+        android:pathData="M62,74h5v8c0,1.5 -1.5,3 -3,3h0c-1.5,0 -2,-1.5 -2,-3z" />
+    <path
+        android:fillColor="#16A34A"
+        android:pathData="M54,58m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+    <path
+        android:strokeWidth="2"
+        android:strokeColor="#F0FDF4"
+        android:fillColor="#00000000"
+        android:pathData="M54,53v10M51,55h6M51,61h6" />
+    <path
+        android:fillColor="#16A34A"
+        android:pathData="M60,50m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+</vector>

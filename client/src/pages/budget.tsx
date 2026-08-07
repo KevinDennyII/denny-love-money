@@ -93,7 +93,7 @@ export default function Budget() {
       />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight" data-testid="text-page-title">Budget</h1>
+          <h1 className="font-bold tracking-tight" data-testid="text-page-title">Budget</h1>
           <p className="text-muted-foreground">Track and manage your monthly expenses</p>
         </div>
         <Button onClick={() => handleAddExpenseClick(null)} data-testid="button-add-expense">

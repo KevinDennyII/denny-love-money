@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches web primary / theme-color #16a34a (hsl 142 76% 36%) -->
+    <color name="brand_primary">#16A34A</color>
+    <color name="brand_primary_dark">#15803D</color>
+    <color name="brand_on_primary">#F0FDF4</color>
+    <color name="brand_background">#FFFFFF</color>
+    <color name="brand_background_dark">#121212</color>
+    <color name="ic_launcher_background">#16A34A</color>
+</resources>

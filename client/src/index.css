@@ -170,8 +170,39 @@
     @apply border-border;
   }
 
+  /*
+   * Josh Comeau — Responsive Typography:
+   * Body text stays ~1rem across devices (manufacturers already balance perceived size).
+   * Form controls stay ≥1rem so mobile Safari doesn't auto-zoom on focus.
+   * Headings use fluid clamp so large desktop titles don't dominate narrow phones.
+   */
+  html {
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    font-size: 1rem;
+    line-height: 1.5;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 1.1rem + 2vw, 1.875rem);
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: clamp(1.25rem, 1.05rem + 1vw, 1.5rem);
+    line-height: 1.25;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
   }
 }
 

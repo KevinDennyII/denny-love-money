@@ -51,7 +51,7 @@ export default function Accounts() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight" data-testid="text-page-title">Accounts</h1>
+          <h1 className="font-bold tracking-tight" data-testid="text-page-title">Accounts</h1>
           <p className="text-muted-foreground">Monthly allocations to your bank accounts and credit cards</p>
         </div>
         <AddAccountDialog />

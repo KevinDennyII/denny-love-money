@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
 import { UserMenu } from "@/components/UserMenu";
 
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
@@ -43,9 +44,10 @@ function Layout({ children }: { children: React.ReactNode }) {
               <UserMenu />
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto p-4 pb-24 md:p-6 md:pb-6">
             {children}
           </main>
+          <MobileBottomNav />
         </div>
       </div>
     </SidebarProvider>

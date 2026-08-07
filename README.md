@@ -60,6 +60,12 @@ npm run dev
 
 The application will be available at `http://localhost:5001`.
 
+## 📱 Android companion
+
+There is a Jetpack Compose Android companion under [`android/`](./android/) so Jamie can open Denny Love Money from the home screen. It loads the same live web app (same look, icons, and data)—not a separate Play Store product. Supports fingerprint / PIN unlock when “Remember this device” is on.
+
+**Install / build / sideload / versioning:** see **[android/README.md](./android/README.md)** and **[android/CHANGELOG.md](./android/CHANGELOG.md)**.
+
 ## ❤️ Contributing
 
 This project is a labor of love. If you would like to contribute, please feel free to fork the repository and submit a pull request.

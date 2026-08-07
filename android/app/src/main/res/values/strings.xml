@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Denny Love Money</string>
+    <string name="loading_message">Opening your family budget…</string>
+    <string name="offline_title">Can\'t reach Denny Love Money</string>
+    <string name="offline_body">Check your connection, then try again. Jamie and Kevin\'s budget lives on the same web app you already use.</string>
+    <string name="retry">Try again</string>
+    <string name="open_in_browser">Open in browser</string>
+
+    <string name="unlock_subtitle">Unlock to open your family budget</string>
+    <string name="unlock_welcome">Welcome back, %1$s</string>
+    <string name="unlock_with_biometrics">Unlock with fingerprint or PIN</string>
+    <string name="unlock_with_password">Sign in with password instead</string>
+    <string name="unlock_prompt_title">Unlock Denny Love Money</string>
+    <string name="unlock_prompt_subtitle">Use your fingerprint, face, or device PIN</string>
+    <string name="unlock_biometrics_unavailable">Set up a screen lock or fingerprint in Android Settings to use quick unlock.</string>
+    <string name="unlock_password_fallback">Device unlock cleared. Sign in with your password.</string>
+    <string name="device_remembered">This phone is remembered. Next time you can unlock with fingerprint or PIN.</string>
+</resources>

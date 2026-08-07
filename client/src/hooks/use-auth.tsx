@@ -3,19 +3,19 @@ import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@shared/schema";
+import { notifyNativeLogin, notifyNativeLogout } from "@/lib/native-bridge";
 
-interface LoginResponse {
-  success: boolean;
-  user: User;
-}
+const USER_KEY = "denny-money-user";
+const REMEMBER_KEY = "denny-money-remember-device";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, rememberDevice?: boolean) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   readOnly: boolean;
+  rememberDevice: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -24,31 +24,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [rememberDevice, setRememberDevice] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedUser = sessionStorage.getItem("denny-money-user");
+    const storedRemember = localStorage.getItem(REMEMBER_KEY) === "1";
+    setRememberDevice(storedRemember);
+
+    const storedUser = localStorage.getItem(USER_KEY);
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
+      try {
+        setUser(JSON.parse(storedUser));
+        setIsAuthenticated(true);
+      } catch {
+        localStorage.removeItem(USER_KEY);
+      }
     }
     setIsLoading(false);
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string, remember = true) => {
     try {
       const response = await apiRequest("POST", "/api/login", { username, password });
       const { user: loggedInUser } = await response.json();
-      
-      
-      sessionStorage.setItem("denny-money-user", JSON.stringify(loggedInUser));
+
+      localStorage.setItem(USER_KEY, JSON.stringify(loggedInUser));
+      if (remember) {
+        localStorage.setItem(REMEMBER_KEY, "1");
+      } else {
+        localStorage.removeItem(REMEMBER_KEY);
+      }
+      setRememberDevice(remember);
       setUser(loggedInUser);
       setIsAuthenticated(true);
 
+      notifyNativeLogin(username, password, remember);
+
       toast({
         title: `Welcome back, ${loggedInUser.username}! `,
-        description: "Access granted to the treasury.",
+        description: remember
+          ? "This device is remembered — next time you can use fingerprint or PIN."
+          : "Access granted to the treasury.",
       });
     } catch (error) {
       toast({
@@ -61,9 +78,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    sessionStorage.removeItem("denny-money-user");
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(REMEMBER_KEY);
+    sessionStorage.removeItem(USER_KEY);
+    setRememberDevice(false);
     setIsAuthenticated(false);
     setUser(null);
+    notifyNativeLogout();
     setLocation("/auth");
     toast({
       title: "Logged out",
@@ -71,10 +92,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const readOnly = user?.role !== 'admin';
+  const readOnly = user?.role !== "admin";
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, isLoading, readOnly }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, user, login, logout, isLoading, readOnly, rememberDevice }}
+    >
       {children}
     </AuthContext.Provider>
   );

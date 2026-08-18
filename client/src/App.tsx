@@ -27,6 +27,7 @@ import PrivacyTransactions from "@/pages/privacy-transactions";
 import React from "react";
 
 function Layout({ children }: { children: React.ReactNode }) {
+  const { readOnly, user } = useAuth();
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3.5rem",
@@ -44,6 +45,15 @@ function Layout({ children }: { children: React.ReactNode }) {
               <UserMenu />
             </div>
           </header>
+          {readOnly && user && (
+            <div
+              className="px-4 py-2 text-sm text-center bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200 border-b border-amber-200 dark:border-amber-800"
+              data-testid="banner-read-only"
+            >
+              Your account is view-only, so adding and editing are turned off. Log out and back in — if this
+              message stays, ask HB to upgrade your account.
+            </div>
+          )}
           <main className="flex-1 overflow-auto p-4 pb-24 md:p-6 md:pb-6">
             {children}
           </main>

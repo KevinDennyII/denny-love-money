@@ -389,13 +389,14 @@ export function DebtCard({ debt }: { debt: Debt }) {
 
           {!readOnly && (
             <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              size="sm"
+              variant="outline"
+              className="h-10 shrink-0 gap-1.5 border-primary/40 text-primary hover:text-primary"
               onClick={() => setEditOpen(true)}
               data-testid={`button-edit-debt-${debt.id}`}
             >
               <Pencil className="h-4 w-4" />
+              Edit
             </Button>
           )}
         </div>

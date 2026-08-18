@@ -285,7 +285,7 @@ export function AccountCard({ account }: { account: AccountDisplay }) {
             <Button 
               size="icon" 
               variant="ghost" 
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="h-10 w-10 text-muted-foreground hover:text-foreground"
               onClick={() => setEditOpen(true)}
               data-testid={`button-edit-account-${account.id}`}
               disabled={account.isDebt}

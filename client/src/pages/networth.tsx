@@ -123,7 +123,7 @@ export default function NetWorth() {
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
               <TrendingUp className="h-6 w-6 text-green-500" />
               Assets
@@ -147,7 +147,7 @@ export default function NetWorth() {
             )}
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
               <TrendingDown className="h-6 w-6 text-red-500" />
               Liabilities

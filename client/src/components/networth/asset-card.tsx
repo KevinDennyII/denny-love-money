@@ -205,34 +205,52 @@ export function isLiveSyncedAsset(asset: Asset): boolean {
   return notes.includes("banksync") || notes.includes("live from");
 }
 
+/** Strip sync boilerplate — the Live badge already covers that. */
+function displayNotes(asset: Asset, live: boolean): string | null {
+  const raw = (asset.notes ?? "").trim();
+  if (!raw) return null;
+  if (live) {
+    const cleaned = raw
+      .replace(/\s*Live from BankSync[^.]*(?:\.[^.]*)?/gi, "")
+      .replace(/\s*Synced from BankSync[^.]*(?:\.[^.]*)?/gi, "")
+      .replace(/\(\s*Charles Schwab\s*\)/gi, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/^[\s.·-]+|[\s.·-]+$/g, "")
+      .trim();
+    return cleaned || null;
+  }
+  return raw;
+}
+
 export function AssetCard({ asset }: { asset: Asset }) {
   const [editOpen, setEditOpen] = useState(false);
   const { readOnly } = useAuth();
   const Icon = assetTypeIcons[asset.assetType] || Building;
   const value = parseFloat(asset.value as string);
   const live = isLiveSyncedAsset(asset);
+  const notes = displayNotes(asset, live);
 
   return (
     <motion.div layout>
       <div 
-        className="flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all group"
+        className="flex items-start sm:items-center justify-between gap-3 p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all group"
         data-testid={`card-asset-${asset.id}`}
       >
-        <div className="flex items-center gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
             <Icon className="h-5 w-5 text-green-600 dark:text-green-400" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-semibold">{asset.name}</h3>
+              <h3 className="font-semibold truncate">{asset.name}</h3>
               {live && (
-                <Badge variant="secondary" className="gap-1 text-[10px]">
+                <Badge variant="secondary" className="gap-1 text-[10px] shrink-0">
                   <Radio className="h-3 w-3" />
                   Live
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex flex-wrap items-center gap-2 mt-1">
               <Badge variant="outline" className="text-xs font-normal">
                 {assetTypeLabels[asset.assetType]}
               </Badge>
@@ -240,6 +258,9 @@ export function AssetCard({ asset }: { asset: Asset }) {
                 <OwnerBadge owner={asset.owner} variant={asset.owner === 'Kevin' ? 'default' : asset.owner === 'Jamie' ? 'secondary' : 'outline'} />
               )}
             </div>
+            {notes && (
+              <p className="text-xs text-muted-foreground mt-1 truncate">{notes}</p>
+            )}
             {asset.lastUpdated && (
               <div className="text-xs text-muted-foreground mt-1">
                 Updated: {new Date(asset.lastUpdated).toLocaleDateString()} {new Date(asset.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -247,13 +268,10 @@ export function AssetCard({ asset }: { asset: Asset }) {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-lg font-bold text-green-500">{formatCurrency(value)}</p>
-            {asset.notes && (
-              <p className="text-xs text-muted-foreground max-w-[200px] truncate">{asset.notes}</p>
-            )}
-          </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <p className="text-lg font-bold text-green-500 tabular-nums text-right">
+            {formatCurrency(value)}
+          </p>
           {!readOnly && (
             <Button 
               size="icon" 

@@ -21,7 +21,8 @@
     "db:update-guest-pw": "tsx -r dotenv/config script/update-guest-password.ts",
     "db:update-prod-user": "tsx -r dotenv/config script/update-production-user.ts",
     "db:prod-reset": "tsx -r dotenv/config script/db-reset.ts",
-    "db:seed-prod": "tsx script/seed-users.ts"
+    "db:seed-prod": "tsx script/seed-users.ts",
+    "cleanup": "bash script/cleanup.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

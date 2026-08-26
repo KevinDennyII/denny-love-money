@@ -66,12 +66,12 @@ export function LiabilityCategory({ title, icon: Icon, debts }: { title: string,
       </div>
       <CollapsibleContent className="space-y-2 pl-4 border-l-2 border-muted ml-2">
         {debts.map((debt) => (
-          <div key={debt.id} className="flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all" data-testid={`liability-${debt.id}`}>
-            <div>
-              <p className="font-medium">{debt.name}</p>
-              <p className="text-sm text-muted-foreground">{debt.creditor}</p>
+          <div key={debt.id} className="flex items-center justify-between gap-3 p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all min-w-0" data-testid={`liability-${debt.id}`}>
+            <div className="min-w-0">
+              <p className="font-medium truncate">{debt.name}</p>
+              <p className="text-sm text-muted-foreground truncate">{debt.creditor}</p>
             </div>
-            <p className="font-bold text-red-500">{formatCurrency(debt.currentBalance)}</p>
+            <p className="font-bold text-red-500 tabular-nums shrink-0">{formatCurrency(debt.currentBalance)}</p>
           </div>
         ))}
       </CollapsibleContent>

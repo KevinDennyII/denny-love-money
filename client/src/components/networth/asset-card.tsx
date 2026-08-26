@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Building, Radio } from "lucide-react";
+import { Pencil, Building } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type Asset, type InsertAsset } from "@shared/schema";
 import { formatCurrency } from "@/lib/formatters";
 import { OwnerBadge } from "@/components/owner-badge";
+import { LiveBadge } from "@/components/live-badge";
 import { assetFormSchema, type AssetFormValues, assetTypeIcons, assetTypeLabels } from "./schemas";
 import { motion } from "framer-motion";
 
@@ -243,12 +244,7 @@ export function AssetCard({ asset }: { asset: Asset }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-semibold truncate">{asset.name}</h3>
-              {live && (
-                <Badge variant="secondary" className="gap-1 text-[10px] shrink-0">
-                  <Radio className="h-3 w-3" />
-                  Live
-                </Badge>
-              )}
+              {live && <LiveBadge />}
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-1">
               <Badge variant="outline" className="text-xs font-normal">

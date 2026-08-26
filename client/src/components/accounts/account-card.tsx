@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Building2, Radio } from "lucide-react";
+import { Pencil, Building2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type Account, type InsertAccount } from "@shared/schema";
 import { formatCurrency } from "@/lib/formatters";
 import { OwnerBadge } from "@/components/owner-badge";
+import { LiveBadge } from "@/components/live-badge";
 import { accountFormSchema, type AccountFormValues, accountTypeIcons, accountTypeLabels } from "./schemas";
 
 export type AccountDisplay = Account & { isDebt?: boolean; isLiveSynced?: boolean };
@@ -285,12 +286,7 @@ export function AccountCard({ account, mode = "balance" }: AccountCardProps) {
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <h3 className="font-semibold text-lg truncate">{account.name}</h3>
               <OwnerBadge owner={account.owner} variant={account.owner === 'Kevin' ? 'default' : account.owner === 'Jamie' ? 'secondary' : 'outline'} />
-              {live && (
-                <Badge variant="secondary" className="gap-1 text-[10px]">
-                  <Radio className="h-3 w-3" />
-                  Live
-                </Badge>
-              )}
+              {live && <LiveBadge />}
               {!account.isActive && (
                 <Badge variant="destructive">Inactive</Badge>
               )}

@@ -206,6 +206,67 @@
   }
 }
 
+/*
+ * Live badge (BankSync) — Comeau-friendly motion:
+ * - Glow via layered box-shadow (cheap, no filter/blur stacks)
+ * - Icon pulse via opacity + transform only
+ * - Disabled when prefers-reduced-motion
+ */
+@layer components {
+  .live-badge {
+    border-color: hsl(var(--primary) / 0.45);
+    background-color: hsl(var(--primary) / 0.16);
+    color: hsl(var(--primary));
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.28),
+      0 0 10px 1px hsl(var(--primary) / 0.35);
+    animation: live-glow 2.4s ease-in-out infinite;
+  }
+
+  .live-badge-icon {
+    animation: live-icon-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes live-glow {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.22),
+        0 0 8px 0 hsl(var(--primary) / 0.28);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.5),
+        0 0 14px 2px hsl(var(--primary) / 0.55);
+    }
+  }
+
+  @keyframes live-icon-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.55;
+      transform: scale(1.12);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live-badge,
+    .live-badge-icon {
+      animation: none;
+    }
+
+    .live-badge {
+      box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.4),
+        0 0 10px 1px hsl(var(--primary) / 0.4);
+    }
+  }
+}
+
 /**
  * Using the elevate system.
  * Automatic contrast adjustment.

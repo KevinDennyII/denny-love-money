@@ -64,6 +64,24 @@ export async function runMigrations() {
     )
   `);
 
+  // Restore SC retirement assets to original static seed values.
+  // Schwab BankSync previously wrote the live Roth balance onto Roth IRA - SC by mistake;
+  // live Schwab Roth now maps to Roth IRA - HB only.
+  await db.execute(sql`
+    UPDATE assets
+    SET value = 1116.32,
+        notes = NULL,
+        last_updated = NOW()
+    WHERE name ILIKE 'Roth IRA - SC'
+  `);
+  await db.execute(sql`
+    UPDATE assets
+    SET value = 2649.73,
+        notes = NULL,
+        last_updated = NOW()
+    WHERE name ILIKE 'Traditional IRA - SC'
+  `);
+
   // Ensure guest user password is set to the correct value
   const guestHash = await bcrypt.hash("community-money", 10);
   await db.execute(

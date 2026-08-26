@@ -133,22 +133,28 @@ function matchDebt(debts: Debt[], remote: BanksyncAccount): Debt | undefined {
   return undefined;
 }
 
-/** Prefer Kevin's Schwab Roth asset ("Roth IRA - SC"); fall back to name/owner heuristics. */
+/** Charles Schwab Roth → net-worth asset "Roth IRA - HB" (never SC — SC stays static). */
 function matchRetirementAsset(assets: Asset[], remote: BanksyncAccount): Asset | undefined {
-  const name = remote.accountName.toLowerCase();
   const institution = normalizeInstitution(remote.bankName).toLowerCase();
+  if (!institution.includes("schwab")) return undefined;
+
   const retirement = assets.filter((a) => a.assetType === "retirement");
-
-  if (institution.includes("schwab") || /schwab|roth|ira/i.test(name)) {
-    return (
-      retirement.find((a) => /roth.*sc|sc.*roth|schwab/i.test(a.name) && a.owner === "Kevin") ??
-      retirement.find((a) => /roth.*sc|\bsc\b|schwab/i.test(a.name)) ??
-      retirement.find((a) => /roth/i.test(a.name) && a.owner === "Kevin")
-    );
-  }
-
-  return undefined;
+  return (
+    retirement.find((a) => /roth\s*ira\s*-\s*hb/i.test(a.name)) ??
+    retirement.find((a) => /roth/i.test(a.name) && /\bhb\b/i.test(a.name) && !/\bsc\b/i.test(a.name))
+  );
 }
+
+function matchEmergencyCashAsset(assets: Asset[]): Asset | undefined {
+  const cash = assets.filter((a) => a.assetType === "cash");
+  return (
+    cash.find((a) => /emergency/i.test(a.name)) ??
+    cash.find((a) => /estimate of all savings/i.test(a.name))
+  );
+}
+
+const BANKSYNC_LIVE_NOTE = "Live from BankSync";
+
 
 function findAccountByInstitutionAndHints(
   accounts: Account[],
@@ -233,17 +239,20 @@ function accountDefaultsForRemote(remote: BanksyncAccount): InsertAccount {
   else if (
     lower.includes("kevin") ||
     lower.startsWith("kjd") ||
-    institution === "Charles Schwab" ||
     institution === "Greenwood" ||
     (institution === "Navy Federal" && !lower.includes("jamie"))
   ) {
     owner = "Kevin";
   }
+  // Schwab Roth maps to net-worth "Roth IRA - HB" (seed owner Jamie)
+  if (institution === "Charles Schwab" && /roth/i.test(lower)) {
+    owner = "Jamie";
+  }
 
   let displayName = name;
   if (/emergency/i.test(name)) displayName = "USAA Emergency Savings";
   else if (institution === "Charles Schwab" && /roth/i.test(name)) {
-    displayName = "Kevin Schwab Roth IRA";
+    displayName = "Schwab Roth IRA - HB";
   } else if (institution === "Chime" && type.includes("check")) {
     displayName = "Chime Checking";
   } else if (institution === "Chime" && type.includes("saving")) {
@@ -258,8 +267,8 @@ function accountDefaultsForRemote(remote: BanksyncAccount): InsertAccount {
     currentBalance: formatBalance(remote.balance),
     owner,
     notes: /emergency/i.test(lower)
-      ? `Emergency fund — keep at least $${emergencyGoalAmount().toFixed(0)}`
-      : `Synced from BankSync (${institution} · ${remote.accountType})`,
+      ? `Emergency fund — keep at least $${emergencyGoalAmount().toFixed(0)}. ${BANKSYNC_LIVE_NOTE}`
+      : `Synced from BankSync (${institution} · ${remote.accountType}). ${BANKSYNC_LIVE_NOTE}`,
     isActive: true,
   };
 }
@@ -322,7 +331,13 @@ export async function syncBanksyncBalances(): Promise<BanksyncSyncResult> {
       const asset = matchRetirementAsset(localAssets, remote);
       if (asset) {
         const previous = String(asset.value);
-        await storage.updateAsset(asset.id, { value: balanceStr });
+        await storage.updateAsset(asset.id, {
+          value: balanceStr,
+          notes: `${BANKSYNC_LIVE_NOTE} (${institution})`,
+        });
+        // Keep in-memory list current for later emergency cash matching
+        asset.value = balanceStr as typeof asset.value;
+        asset.notes = `${BANKSYNC_LIVE_NOTE} (${institution})`;
         updates.push({
           kind: "asset",
           id: asset.id,
@@ -381,8 +396,10 @@ export async function syncBanksyncBalances(): Promise<BanksyncSyncResult> {
       patch.name = "Chime Checking";
     }
     if (institution === "Charles Schwab" && /roth/i.test(remote.accountName)) {
-      patch.name = "Kevin Schwab Roth IRA";
+      patch.name = "Schwab Roth IRA - HB";
       patch.accountType = "investment";
+      patch.owner = "Jamie";
+      patch.notes = `Synced from BankSync (Charles Schwab). ${BANKSYNC_LIVE_NOTE}`;
     }
 
     await storage.updateAccount(account.id, patch);
@@ -397,6 +414,7 @@ export async function syncBanksyncBalances(): Promise<BanksyncSyncResult> {
   }
 
   const refreshed = await storage.getAccounts();
+  const refreshedAssets = await storage.getAssets();
   const eLast4 = emergencyLast4();
   const goal = emergencyGoalAmount();
   const emergencyAccount =
@@ -406,6 +424,48 @@ export async function syncBanksyncBalances(): Promise<BanksyncSyncResult> {
   const emergencyBalance = emergencyAccount
     ? parseFloat(String(emergencyAccount.currentBalance))
     : null;
+
+  // Push emergency savings into Net Worth cash so the page isn't stuck on the $1500 estimate
+  if (emergencyBalance != null && Number.isFinite(emergencyBalance)) {
+    const balanceStr = formatBalance(emergencyBalance);
+    const cashAsset = matchEmergencyCashAsset(refreshedAssets);
+    if (cashAsset) {
+      const previous = String(cashAsset.value);
+      await storage.updateAsset(cashAsset.id, {
+        name: "Emergency Savings",
+        value: balanceStr,
+        assetType: "cash",
+        owner: cashAsset.owner || "Joint",
+        notes: `USAA ··${eLast4}. Goal $${goal.toFixed(0)}. ${BANKSYNC_LIVE_NOTE}`,
+      });
+      updates.push({
+        kind: "asset",
+        id: cashAsset.id,
+        name: "Emergency Savings",
+        last4: eLast4,
+        previousBalance: previous,
+        currentBalance: balanceStr,
+      });
+    } else {
+      const createdAsset = await storage.createAsset({
+        name: "Emergency Savings",
+        value: balanceStr,
+        assetType: "cash",
+        owner: "Joint",
+        notes: `USAA ··${eLast4}. Goal $${goal.toFixed(0)}. ${BANKSYNC_LIVE_NOTE}`,
+      });
+      created += 1;
+      updates.push({
+        kind: "asset",
+        id: createdAsset.id,
+        name: createdAsset.name,
+        last4: eLast4,
+        previousBalance: "0.00",
+        currentBalance: balanceStr,
+        created: true,
+      });
+    }
+  }
 
   const result: BanksyncSyncResult = {
     fetched: remoteAccounts.length,

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Building } from "lucide-react";
+import { Pencil, Building, Radio } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -200,11 +200,17 @@ export function EditAssetDialog({ asset, onClose }: { asset: Asset; onClose: () 
   );
 }
 
+export function isLiveSyncedAsset(asset: Asset): boolean {
+  const notes = (asset.notes ?? "").toLowerCase();
+  return notes.includes("banksync") || notes.includes("live from");
+}
+
 export function AssetCard({ asset }: { asset: Asset }) {
   const [editOpen, setEditOpen] = useState(false);
   const { readOnly } = useAuth();
   const Icon = assetTypeIcons[asset.assetType] || Building;
   const value = parseFloat(asset.value as string);
+  const live = isLiveSyncedAsset(asset);
 
   return (
     <motion.div layout>
@@ -217,7 +223,15 @@ export function AssetCard({ asset }: { asset: Asset }) {
             <Icon className="h-5 w-5 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <h3 className="font-semibold">{asset.name}</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold">{asset.name}</h3>
+              {live && (
+                <Badge variant="secondary" className="gap-1 text-[10px]">
+                  <Radio className="h-3 w-3" />
+                  Live
+                </Badge>
+              )}
+            </div>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="outline" className="text-xs font-normal">
                 {assetTypeLabels[asset.assetType]}

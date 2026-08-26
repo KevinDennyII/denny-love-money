@@ -213,7 +213,7 @@ export async function seedDatabase() {
   if (existingAssets.length === 0) {
     console.log("Seeding Assets...");
     const assetsData = [
-      { name: "Cash (Estimate of All Savings)", value: "1500", assetType: "cash", owner: "Joint" },
+      { name: "Emergency Savings", value: "1500", assetType: "cash", owner: "Joint", notes: "Placeholder until BankSync syncs USAA emergency fund" },
       { name: "Car - SC", value: "14000", assetType: "vehicle", owner: "Kevin" },
       { name: "Car - HB", value: "4000", assetType: "vehicle", owner: "Jamie" },
       { name: "Roth IRA - SC", value: "1116.32", assetType: "retirement", owner: "Kevin" },

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Building2 } from "lucide-react";
+import { Pencil, Building2, Radio } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,20 @@ import { formatCurrency } from "@/lib/formatters";
 import { OwnerBadge } from "@/components/owner-badge";
 import { accountFormSchema, type AccountFormValues, accountTypeIcons, accountTypeLabels } from "./schemas";
 
-export type AccountDisplay = Account & { isDebt?: boolean };
+export type AccountDisplay = Account & { isDebt?: boolean; isLiveSynced?: boolean };
+
+export function isLiveSyncedAccount(account: AccountDisplay): boolean {
+  if (account.isLiveSynced) return true;
+  const notes = (account.notes ?? "").toLowerCase();
+  if (notes.includes("banksync") || notes.includes("synced from")) return true;
+  const institution = (account.institution ?? "").toLowerCase();
+  return (
+    institution.includes("usaa") ||
+    institution.includes("chime") ||
+    institution.includes("schwab") ||
+    institution.includes("navy")
+  );
+}
 
 export function EditAccountDialog({ account, onClose }: { account: Account; onClose: () => void }) {
   const { toast } = useToast();
@@ -30,6 +43,7 @@ export function EditAccountDialog({ account, onClose }: { account: Account; onCl
       institution: account.institution,
       accountNumber: account.accountNumber || "",
       accountType: account.accountType,
+      monthlyAllocation: account.monthlyAllocation?.toString() || "0",
       currentBalance: account.currentBalance?.toString() || "0",
       owner: account.owner,
       notes: account.notes || "",
@@ -88,7 +102,7 @@ export function EditAccountDialog({ account, onClose }: { account: Account; onCl
       <DialogHeader>
         <DialogTitle>Edit Account</DialogTitle>
         <DialogDescription>
-          Update your account details.
+          Update monthly contribution and balance details.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -169,12 +183,12 @@ export function EditAccountDialog({ account, onClose }: { account: Account; onCl
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="currentBalance"
+              name="monthlyAllocation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monthly Allocation</FormLabel>
+                  <FormLabel>Monthly Contribution</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-balance" />
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-monthly-allocation" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -182,18 +196,31 @@ export function EditAccountDialog({ account, onClose }: { account: Account; onCl
             />
             <FormField
               control={form.control}
-              name="accountNumber"
+              name="currentBalance"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Account Number</FormLabel>
+                  <FormLabel>Current Balance</FormLabel>
                   <FormControl>
-                    <Input placeholder="Last 4 digits" {...field} value={field.value || ""} data-testid="input-edit-account-number" />
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-balance" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
+          <FormField
+            control={form.control}
+            name="accountNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Account Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="Last 4 digits" {...field} value={field.value || ""} data-testid="input-edit-account-number" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="notes"
@@ -227,30 +254,45 @@ export function EditAccountDialog({ account, onClose }: { account: Account; onCl
   );
 }
 
-export function AccountCard({ account }: { account: AccountDisplay }) {
+type AccountCardProps = {
+  account: AccountDisplay;
+  /** monthly = planned contribution; balance = live/current total */
+  mode?: "monthly" | "balance";
+};
+
+export function AccountCard({ account, mode = "balance" }: AccountCardProps) {
   const { readOnly } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const Icon = accountTypeIcons[account.accountType] || Building2;
-  const balance = parseFloat(account.currentBalance as string);
-  const isNegative = balance < 0 || account.accountType === 'credit' || account.accountType === 'loan';
+  const amount =
+    mode === "monthly"
+      ? parseFloat(String(account.monthlyAllocation ?? "0"))
+      : parseFloat(String(account.currentBalance ?? "0"));
+  const isNegative = mode === "balance" && (amount < 0 || account.accountType === "credit" || account.accountType === "loan");
+  const live = mode === "balance" && isLiveSyncedAccount(account);
 
   return (
     <>
       <div 
         className="group flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all"
-        data-testid={`card-account-${account.id}`}
+        data-testid={`card-account-${account.id}${mode === "monthly" ? "-monthly" : "-balance"}`}
       >
-        {/* Left: Icon and Info */}
         <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted">
             <Icon className="h-6 w-6 text-muted-foreground" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
               <h3 className="font-semibold text-lg truncate">{account.name}</h3>
               <OwnerBadge owner={account.owner} variant={account.owner === 'Kevin' ? 'default' : account.owner === 'Jamie' ? 'secondary' : 'outline'} />
+              {live && (
+                <Badge variant="secondary" className="gap-1 text-[10px]">
+                  <Radio className="h-3 w-3" />
+                  Live
+                </Badge>
+              )}
               {!account.isActive && (
-                <Badge variant="destructive" className="ml-2">Inactive</Badge>
+                <Badge variant="destructive">Inactive</Badge>
               )}
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -262,7 +304,7 @@ export function AccountCard({ account }: { account: AccountDisplay }) {
                 </>
               )}
             </div>
-            {account.lastUpdated && (
+            {mode === "balance" && account.lastUpdated && (
               <div className="text-xs text-muted-foreground mt-1">
                 Updated: {new Date(account.lastUpdated).toLocaleDateString()} {new Date(account.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -270,14 +312,16 @@ export function AccountCard({ account }: { account: AccountDisplay }) {
           </div>
         </div>
 
-        {/* Right: Balance & Actions */}
         <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
           <div className="text-right">
              <div className={`text-xl font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
-              {formatCurrency(Math.abs(balance))}<span className="text-sm font-normal text-muted-foreground">/mo</span>
+              {formatCurrency(Math.abs(amount))}
+              {mode === "monthly" ? (
+                <span className="text-sm font-normal text-muted-foreground">/mo</span>
+              ) : null}
             </div>
             <Badge variant="outline" className="mt-1">
-                {accountTypeLabels[account.accountType]}
+                {mode === "monthly" ? "Monthly" : accountTypeLabels[account.accountType]}
             </Badge>
           </div>
           

@@ -27,6 +27,7 @@ export function AddAccountDialog() {
       institution: "",
       accountNumber: "",
       accountType: "checking",
+      monthlyAllocation: "0",
       currentBalance: "0",
       owner: "Kevin",
       notes: "",
@@ -157,12 +158,12 @@ export function AddAccountDialog() {
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="currentBalance"
+                name="monthlyAllocation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Monthly Allocation</FormLabel>
+                    <FormLabel>Monthly Contribution</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-balance" />
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-monthly-allocation" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -170,18 +171,31 @@ export function AddAccountDialog() {
               />
               <FormField
                 control={form.control}
-                name="accountNumber"
+                name="currentBalance"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Account Number</FormLabel>
+                    <FormLabel>Current Balance</FormLabel>
                     <FormControl>
-                      <Input placeholder="Last 4 digits" {...field} value={field.value || ""} data-testid="input-account-number" />
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-balance" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="accountNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Account Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Last 4 digits" {...field} value={field.value || ""} data-testid="input-account-number" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="notes"

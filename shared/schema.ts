@@ -10,6 +10,9 @@ export const accounts = pgTable("accounts", {
   institution: text("institution").notNull(),
   accountNumber: text("account_number"),
   accountType: text("account_type").notNull(), // checking, savings, credit, investment, loan
+  /** Planned monthly contribution / deposit into this account */
+  monthlyAllocation: decimal("monthly_allocation", { precision: 12, scale: 2 }).notNull().default("0"),
+  /** Live balance (manual or BankSync) */
   currentBalance: decimal("current_balance", { precision: 12, scale: 2 }).notNull().default("0"),
   owner: text("owner").notNull(), // Kevin, Jamie, Joint
   notes: text("notes"),

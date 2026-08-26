@@ -17,6 +17,12 @@ import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import { fetchApprovedPrivacyTransactions, mapPrivacyTransaction, isPrivacyApiTransaction, verifyPrivacyWebhookHmac } from "./privacy";
 import { syncRecentPrivacyTransactions } from "./privacy-auto-sync";
+import { isBanksyncConfigured } from "./banksync";
+import {
+  getBanksyncSyncStatus,
+  getEmergencySavingsStatus,
+  syncBanksyncBalances,
+} from "./banksync-sync";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -39,7 +45,9 @@ export async function registerRoutes(
       typeof message === "string" &&
       (message.includes("PRIVACY_API_KEY") ||
         message.includes("Privacy API") ||
-        message.startsWith("Privacy API error"));
+        message.startsWith("Privacy API error") ||
+        message.includes("BANKSYNC_API_KEY") ||
+        message.includes("BankSync API"));
     return res.status(isConfigOrUpstream ? 502 : 500).json({ error: message });
   };
 
@@ -595,6 +603,35 @@ export async function registerRoutes(
       console.error("Privacy webhook error:", error);
       // Non-200 triggers Privacy retry with backoff
       return res.status(500).json({ error: "Webhook processing failed" });
+    }
+  });
+
+  // ==================== BANKSYNC (USAA) ====================
+  app.get("/api/banksync/status", async (_req, res) => {
+    try {
+      res.json(getBanksyncSyncStatus());
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get("/api/banksync/emergency", async (_req, res) => {
+    try {
+      res.json(await getEmergencySavingsStatus());
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post("/api/banksync/sync", async (_req, res) => {
+    try {
+      if (!isBanksyncConfigured()) {
+        return res.status(503).json({ error: "BankSync API key is not configured" });
+      }
+      const result = await syncBanksyncBalances();
+      res.json({ success: true, ...result });
+    } catch (error) {
+      handleError(res, error);
     }
   });
 

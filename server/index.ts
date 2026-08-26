@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { seedDatabase } from "./seed";
 import { runMigrations } from "./migrate";
 import { startPrivacyAutoSync } from "./privacy-auto-sync";
+import { startBanksyncAutoSync } from "./banksync-sync";
 
 const app = express();
 const httpServer = createServer(app);
@@ -129,6 +130,7 @@ app.use((req, res, next) => {
     () => {
       log(`serving on port ${port}`);
       startPrivacyAutoSync();
+      startBanksyncAutoSync();
     },
   );
 })();

@@ -3,8 +3,8 @@ services:
     image: postgres:16
     container_name: denny-love-money-db
     ports:
-      # Host 5433 avoids clashing with Homebrew Postgres on 5432
-      - "5433:5432"
+      # Host 5435 — 5433 is often used by other local Docker Postgres containers
+      - "5435:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

@@ -29,6 +29,41 @@ export async function runMigrations() {
     ALTER TABLE expenses ADD COLUMN IF NOT EXISTS category TEXT
   `);
 
+  await db.execute(sql`
+    ALTER TABLE accounts ADD COLUMN IF NOT EXISTS monthly_allocation NUMERIC(12,2) NOT NULL DEFAULT 0
+  `);
+
+  // One-time backfill: restore planned monthly amounts that used to live in current_balance
+  // before BankSync started writing live balances into that column.
+  await db.execute(sql`
+    UPDATE accounts SET monthly_allocation = 7550
+    WHERE monthly_allocation = 0 AND name ILIKE 'Family USAA Checking'
+  `);
+  await db.execute(sql`
+    UPDATE accounts SET monthly_allocation = 300
+    WHERE monthly_allocation = 0 AND name ILIKE 'Jamie USAA Checking'
+  `);
+  await db.execute(sql`
+    UPDATE accounts SET monthly_allocation = 4179
+    WHERE monthly_allocation = 0 AND (
+      name ILIKE 'Chime Prepaid%' OR name ILIKE 'Chime Checking'
+    )
+  `);
+  await db.execute(sql`
+    UPDATE accounts SET monthly_allocation = 200
+    WHERE monthly_allocation = 0 AND name ILIKE 'Kevin NFCU Checking'
+  `);
+  await db.execute(sql`
+    UPDATE accounts SET monthly_allocation = 75
+    WHERE monthly_allocation = 0 AND name ILIKE 'Kevin Greenwood%'
+  `);
+  await db.execute(sql`
+    UPDATE accounts SET monthly_allocation = 100
+    WHERE monthly_allocation = 0 AND (
+      name ILIKE '%Schwab Roth%' OR name ILIKE 'Roth Contributory IRA'
+    )
+  `);
+
   // Ensure guest user password is set to the correct value
   const guestHash = await bcrypt.hash("community-money", 10);
   await db.execute(

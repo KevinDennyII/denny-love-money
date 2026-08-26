@@ -9,6 +9,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { DashboardSection } from "@/components/dashboard/dashboard-section";
 import { AccountsList } from "@/components/dashboard/accounts-list";
 import { DebtProgressCard } from "@/components/dashboard/debt-progress-card";
+import { EmergencySavingsCard } from "@/components/accounts/emergency-savings-card";
 
 export default function Dashboard() {
   const { data: accounts = [], isLoading: accountsLoading } = useQuery<Account[]>({
@@ -85,6 +86,8 @@ export default function Dashboard() {
           isLoading={isLoading}
         />
       </div>
+
+      <EmergencySavingsCard compact showSyncButton={false} />
 
       <div className="space-y-6">
         <Collapsible defaultOpen className="space-y-2">

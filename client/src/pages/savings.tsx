@@ -10,6 +10,7 @@ import { AddSavingsDialog } from "@/components/savings/add-savings-dialog";
 import { AddIncomeDialog } from "@/components/savings/add-income-dialog";
 import { SavingsCategory } from "@/components/savings/savings-category";
 import { IncomeCategory } from "@/components/savings/income-category";
+import { EmergencySavingsCard } from "@/components/accounts/emergency-savings-card";
 
 export default function Savings() {
   const { data: accounts = [], isLoading: accountsLoading } = useQuery<Account[]>({
@@ -68,6 +69,8 @@ export default function Savings() {
           <AddSavingsDialog accounts={accounts} />
         </div>
       </div>
+
+      <EmergencySavingsCard />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>

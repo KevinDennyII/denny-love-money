@@ -3,6 +3,7 @@ import { insertAccountSchema } from "@shared/schema";
 import { Wallet, PiggyBank, CreditCard, TrendingUp, Landmark } from "lucide-react";
 
 export const accountFormSchema = insertAccountSchema.extend({
+  monthlyAllocation: z.string().transform((val) => val || "0"),
   currentBalance: z.string().transform((val) => val || "0"),
 });
 

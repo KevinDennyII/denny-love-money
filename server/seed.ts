@@ -24,12 +24,13 @@ export async function seedDatabase() {
   if (existingAccounts.length === 0) {
     console.log("Seeding Accounts...");
     const accountsData = [
-      { name: "Family USAA Checking", institution: "USAA", accountNumber: "5494", accountType: "checking", currentBalance: "7550", owner: "Joint", notes: "Starting the month of August 2025 $1800 was put back here as we no longer pay for private schooling", isActive: true },
-      { name: "Jamie USAA Checking", institution: "USAA", accountNumber: "1986", accountType: "checking", currentBalance: "300", owner: "Jamie", notes: "Left over so Jamie does not have to go and change current bills being paid for", isActive: true },
-      { name: "Chime Prepaid Visa", institution: "Chime", accountNumber: "", accountType: "checking", currentBalance: "4179", owner: "Joint", notes: "Bills paid with this Prepaid Card can be found on the monthly expenses sheet", isActive: true },
-      { name: "Kevin NFCU Checking", institution: "Navy Federal", accountNumber: "7710", accountType: "checking", currentBalance: "200", owner: "Kevin", notes: "Allowance account", isActive: true },
-      { name: "Kevin Greenwood Checking", institution: "Greenwood", accountNumber: "", accountType: "savings", currentBalance: "75", owner: "Kevin", notes: "Traveling Fund, 4.15% APR Savings Account", isActive: true },
-      { name: "Kevin NFCU Savings", institution: "Navy Federal", accountNumber: "", accountType: "savings", currentBalance: "0", owner: "Kevin", isActive: true },
+      { name: "Family USAA Checking", institution: "USAA", accountNumber: "5494", accountType: "checking", monthlyAllocation: "7550", currentBalance: "0", owner: "Joint", notes: "Starting the month of August 2025 $1800 was put back here as we no longer pay for private schooling", isActive: true },
+      { name: "Jamie USAA Checking", institution: "USAA", accountNumber: "1986", accountType: "checking", monthlyAllocation: "300", currentBalance: "0", owner: "Jamie", notes: "Left over so Jamie does not have to go and change current bills being paid for", isActive: true },
+      { name: "USAA Emergency Savings", institution: "USAA", accountNumber: "1559", accountType: "savings", monthlyAllocation: "0", currentBalance: "0", owner: "Joint", notes: "Emergency fund — keep at least $1500", isActive: true },
+      { name: "Chime Prepaid Visa", institution: "Chime", accountNumber: "", accountType: "checking", monthlyAllocation: "4179", currentBalance: "0", owner: "Joint", notes: "Bills paid with this Prepaid Card can be found on the monthly expenses sheet", isActive: true },
+      { name: "Kevin NFCU Checking", institution: "Navy Federal", accountNumber: "7710", accountType: "checking", monthlyAllocation: "200", currentBalance: "0", owner: "Kevin", notes: "Allowance account", isActive: true },
+      { name: "Kevin Greenwood Checking", institution: "Greenwood", accountNumber: "", accountType: "savings", monthlyAllocation: "75", currentBalance: "0", owner: "Kevin", notes: "Traveling Fund, 4.15% APR Savings Account", isActive: true },
+      { name: "Kevin NFCU Savings", institution: "Navy Federal", accountNumber: "", accountType: "savings", monthlyAllocation: "0", currentBalance: "0", owner: "Kevin", isActive: true },
     ];
     await db.insert(accounts).values(accountsData);
   } else {

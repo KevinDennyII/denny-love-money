@@ -4,7 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AccountCard, type AccountDisplay } from "./account-card";
 
-export function AccountCategory({ title, icon, accounts }: { title: string, icon: React.ReactNode, accounts: AccountDisplay[] }) {
+export function AccountCategory({
+  title,
+  icon,
+  accounts,
+  mode = "balance",
+}: {
+  title: string;
+  icon: React.ReactNode;
+  accounts: AccountDisplay[];
+  mode?: "monthly" | "balance";
+}) {
   const [isOpen, setIsOpen] = useState(true);
 
   if (accounts.length === 0) return null;
@@ -24,7 +34,7 @@ export function AccountCategory({ title, icon, accounts }: { title: string, icon
       </div>
       <CollapsibleContent className="space-y-4">
         {accounts.map((account) => (
-          <AccountCard key={account.id} account={account} />
+          <AccountCard key={`${account.id}-${mode}`} account={account} mode={mode} />
         ))}
       </CollapsibleContent>
     </Collapsible>

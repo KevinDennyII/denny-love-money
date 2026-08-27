@@ -63,7 +63,7 @@ export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
     mutation.mutate({
       ...data,
       accountId: selectedAccount.id,
-      amount: selectedAccount.currentBalance as string,
+      amount: String(selectedAccount.monthlyAllocation ?? "0"),
     } as InsertIncome);
   };
 
@@ -124,10 +124,10 @@ export function AddIncomeDialog({ accounts }: { accounts: Account[] }) {
                 <FormLabel>Amount</FormLabel>
                 <p className="text-sm font-medium pt-2" data-testid="text-income-amount">
                   {selectedAccount
-                    ? formatCurrency(parseFloat(selectedAccount.currentBalance as string))
+                    ? formatCurrency(parseFloat(String(selectedAccount.monthlyAllocation ?? "0")))
                     : "—"}
                 </p>
-                <p className="text-xs text-muted-foreground">Synced from linked account</p>
+                <p className="text-xs text-muted-foreground">Synced from account monthly allocation</p>
               </FormItem>
             </div>
             <FormField

@@ -84,7 +84,7 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
     const payload: InsertIncome = {
       ...rest,
       amount: linkedAccount
-        ? (linkedAccount.currentBalance as string)
+        ? String(linkedAccount.monthlyAllocation ?? "0")
         : income.amount as string,
     } as InsertIncome;
     updateMutation.mutate(payload);
@@ -140,11 +140,11 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
               <FormLabel>Amount</FormLabel>
               <p className="text-sm font-medium pt-2" data-testid="text-edit-income-amount">
                 {linkedAccount
-                  ? formatCurrency(parseFloat(linkedAccount.currentBalance as string))
+                  ? formatCurrency(parseFloat(String(linkedAccount.monthlyAllocation ?? "0")))
                   : formatCurrency(parseFloat(income.amount as string))}
               </p>
               <p className="text-xs text-muted-foreground">
-                {linkedAccount ? "Synced from linked account" : "Update on the Accounts page"}
+                {linkedAccount ? "Synced from account monthly allocation" : "Update on the Accounts page"}
               </p>
             </FormItem>
           </div>

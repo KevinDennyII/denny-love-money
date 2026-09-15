@@ -204,6 +204,10 @@ export default function JamiePage() {
         />
       </div>
 
+      <DashboardSection title="Debt payoff progress" icon={TrendingUp}>
+        <DebtProgressCard debts={jamieDebts} isLoading={debtsLoading} />
+      </DashboardSection>
+
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
@@ -314,10 +318,6 @@ export default function JamiePage() {
           )}
         </div>
       )}
-
-      <DashboardSection title="Debt payoff progress" icon={TrendingUp}>
-        <DebtProgressCard debts={jamieDebts} isLoading={debtsLoading} />
-      </DashboardSection>
 
       {isLoading ? (
         <div className="space-y-4">

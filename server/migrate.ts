@@ -277,7 +277,7 @@ export async function runMigrations() {
     WHERE name ILIKE 'Traditional IRA - SC'
   `);
 
-  // Schwab Roth IRA belongs to HB (Kevin) — not Jamie's section
+  // Align asset nicknames with ownership: HB = Kevin, SC = Jamie
   await db.execute(sql`
     UPDATE accounts
     SET owner = 'Kevin',
@@ -289,10 +289,18 @@ export async function runMigrations() {
   await db.execute(sql`
     UPDATE assets
     SET owner = 'Kevin',
-        notes = COALESCE(notes, 'Schwab Roth IRA (HB)'),
         last_updated = NOW()
-    WHERE name ILIKE 'Roth IRA - HB'
+    WHERE name ILIKE '% HB'
+       OR name ILIKE '%- HB'
        OR name ILIKE 'Schwab Roth IRA%'
+       OR name ILIKE '%401k - HB'
+  `);
+  await db.execute(sql`
+    UPDATE assets
+    SET owner = 'Jamie',
+        last_updated = NOW()
+    WHERE name ILIKE '% SC'
+       OR name ILIKE '%- SC'
   `);
 
   // Ensure guest user password is set to the correct value

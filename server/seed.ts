@@ -24,11 +24,11 @@ export async function seedDatabase() {
   if (existingAccounts.length === 0) {
     console.log("Seeding Accounts...");
     const accountsData = [
-      { name: "Family USAA Checking", institution: "USAA", accountNumber: "5494", accountType: "checking", monthlyAllocation: "7550", currentBalance: "0", owner: "Joint", notes: "Starting the month of August 2025 $1800 was put back here as we no longer pay for private schooling", isActive: true },
-      { name: "Jamie USAA Checking", institution: "USAA", accountNumber: "1986", accountType: "checking", monthlyAllocation: "300", currentBalance: "0", owner: "Jamie", notes: "Left over so Jamie does not have to go and change current bills being paid for", isActive: true },
+      { name: "Family USAA Checking", institution: "USAA", accountNumber: "5494", accountType: "checking", monthlyAllocation: "4954.10", currentBalance: "0", owner: "Joint", notes: "Biweekly $2,477.05 × 2. Aug 2025: $1800 put back as we no longer pay for private schooling", isActive: true },
+      { name: "Jamie USAA Checking", institution: "USAA", accountNumber: "1986", accountType: "checking", monthlyAllocation: "4814.76", currentBalance: "0", owner: "Jamie", notes: "Same as Jamie Paycheck — biweekly $2,407.38 × 2", isActive: true },
       { name: "USAA Emergency Savings", institution: "USAA", accountNumber: "1559", accountType: "savings", monthlyAllocation: "0", currentBalance: "0", owner: "Joint", notes: "Emergency fund — keep at least $1500", isActive: true },
       { name: "Chime Prepaid Visa", institution: "Chime", accountNumber: "", accountType: "checking", monthlyAllocation: "4179", currentBalance: "0", owner: "Joint", notes: "Bills paid with this Prepaid Card can be found on the monthly expenses sheet", isActive: true },
-      { name: "Kevin NFCU Checking", institution: "Navy Federal", accountNumber: "7710", accountType: "checking", monthlyAllocation: "200", currentBalance: "0", owner: "Kevin", notes: "Allowance account", isActive: true },
+      { name: "Kevin NFCU Checking", institution: "Navy Federal", accountNumber: "7710", accountType: "checking", monthlyAllocation: "0", currentBalance: "0", owner: "Kevin", notes: "Allowance account — monthly currently $0", isActive: true },
       { name: "Kevin Greenwood Checking", institution: "Greenwood", accountNumber: "", accountType: "savings", monthlyAllocation: "75", currentBalance: "0", owner: "Kevin", notes: "Traveling Fund, 4.15% APR Savings Account", isActive: true },
       { name: "Kevin NFCU Savings", institution: "Navy Federal", accountNumber: "", accountType: "savings", monthlyAllocation: "0", currentBalance: "0", owner: "Kevin", isActive: true },
     ];
@@ -42,8 +42,8 @@ export async function seedDatabase() {
   if (existingIncomes.length === 0) {
     console.log("Seeding Incomes...");
     const incomesData = [
-      { name: "Family USAA Income", amount: "7550", frequency: "monthly", notes: "Primary family income deposited to USAA", isActive: true },
-      { name: "Jamie USAA Income", amount: "300", frequency: "monthly", notes: "Jamie's account income", isActive: true },
+      { name: "Family USAA Income", amount: "4954.10", frequency: "monthly", notes: "Biweekly $2,477.05 × 2 deposited to Family USAA Checking", isActive: true },
+      { name: "Jamie Paycheck", amount: "4814.76", frequency: "monthly", notes: "Biweekly $2,407.38 × 2 — same as Jamie USAA Checking monthly allocation", isActive: true },
       { name: "Chime Prepaid Income", amount: "4179", frequency: "monthly", notes: "Income for bills paid with Chime", isActive: true },
     ];
     await db.insert(incomes).values(incomesData);
@@ -54,8 +54,8 @@ export async function seedDatabase() {
   if (existingSavings.length === 0) {
     console.log("Seeding Savings Allocations...");
     const savingsData = [
-      { name: "Jamie USAA Savings", amount: "300", notes: "Monthly savings allocation", isActive: true },
-      { name: "Kevin NFCU Allowance", amount: "200", notes: "Monthly allowance", isActive: true },
+      { name: "Jamie USAA Savings", amount: "0", notes: "Obsolete $300 leftover removed Sep 2025", isActive: false },
+      { name: "Kevin NFCU Allowance", amount: "0", notes: "NFCU allowance paused — monthly allocation is $0", isActive: false },
       { name: "Kevin Greenwood Traveling", amount: "75", notes: "Traveling Fund, 4.15% APR Savings Account", isActive: true },
       { name: "Kevin Roth IRA", amount: "100", notes: "Retirement contribution", isActive: true },
       { name: "Jamie Roth IRA", amount: "0", notes: "Currently paused", isActive: false },
@@ -77,7 +77,7 @@ export async function seedDatabase() {
       { name: "Sewage/Trash/Water", budgetedAmount: "100", frequency: "monthly", notes: "Average Cost (City of Selma) - Paid with Chime Prepaid Visa", isActive: true },
       { name: "Car + Renter's Insurance", budgetedAmount: "250", frequency: "monthly", isActive: true },
       { name: "Groceries", budgetedAmount: "600", frequency: "monthly", notes: "Average Cost", isActive: true },
-      { name: "Eating out/Entertainment", budgetedAmount: "1000", frequency: "monthly", notes: "Average Cost", isActive: true },
+      { name: "Eating out/Entertainment", budgetedAmount: "1000", frequency: "monthly", notes: "Average Cost — includes Chuck E. Cheese monthly pass (~$11.99)", isActive: true },
       { name: "Vehicle Gas", budgetedAmount: "350", frequency: "monthly", notes: "Average Cost", isActive: true },
       { name: "Household Items", budgetedAmount: "100", frequency: "monthly", notes: "Average Cost", isActive: true },
       { name: "Toiletries", budgetedAmount: "100", frequency: "monthly", notes: "Average Cost", isActive: true },
@@ -95,7 +95,7 @@ export async function seedDatabase() {
       { name: "Nail Salon", budgetedAmount: "140", frequency: "monthly", isActive: true },
       { name: "Clothing Items", budgetedAmount: "400", frequency: "monthly", notes: "Kids and Adults", isActive: true },
       { name: "Student Loans (Kevin)", budgetedAmount: "137", frequency: "monthly", notes: "Paid with Chime Prepaid Visa", isActive: true },
-      { name: "Student Loans (Jamie)", budgetedAmount: "0", frequency: "monthly", notes: "Paused", isActive: false },
+      { name: "Student Loans (Jamie)", budgetedAmount: "0", frequency: "monthly", notes: "Paused — payment tracked on Student Loan - Jamie debt", isActive: false },
       { name: "Lexus NX 2018 - NFCU Auto Loan", budgetedAmount: "300", frequency: "monthly", notes: "Payments Start January 13th - Paid with Chime Prepaid Visa", isActive: true },
       { name: "Lupita Cleaning", budgetedAmount: "150", frequency: "monthly", isActive: true },
       { name: "Emma - Cheering", budgetedAmount: "75", frequency: "monthly", notes: "Paid with Chime Prepaid Visa", isActive: true },
@@ -123,19 +123,23 @@ export async function seedDatabase() {
       { name: "NFCU Visa - Kevin", creditor: "Navy Federal", debtType: "credit_card", currentBalance: "0", owner: "Kevin", isPaidOff: true, notes: "PAID OFF!" },
       { name: "Paypal Pay Later - Kevin", creditor: "PayPal", debtType: "pay_later", currentBalance: "0", owner: "Kevin", isPaidOff: true, notes: "PAID OFF!" },
       { name: "Barclays - Kevin", creditor: "Barclays", debtType: "credit_card", currentBalance: "0", owner: "Kevin", isPaidOff: true, notes: "PAID OFF!" },
-      { name: "NFCU Visa - Jamie #1", creditor: "Navy Federal", debtType: "credit_card", currentBalance: "19316.58", minimumPayment: "254", dueDay: 1, owner: "Jamie", isPaidOff: false },
-      { name: "NFCU Visa - Jamie #2", creditor: "Navy Federal", debtType: "credit_card", currentBalance: "19591.90", minimumPayment: "258", dueDay: 15, owner: "Jamie", isPaidOff: false },
-      { name: "USAA Visa - Jamie", creditor: "USAA", debtType: "credit_card", currentBalance: "6073.10", minimumPayment: "150", owner: "Jamie", isPaidOff: false },
-      { name: "Best Buy", creditor: "Best Buy", debtType: "credit_card", currentBalance: "7100", minimumPayment: "150", dueDay: 15, owner: "Jamie", isPaidOff: false },
-      { name: "Paypal Credit - Jamie", creditor: "PayPal", debtType: "credit_card", currentBalance: "4987.88", minimumPayment: "175", dueDay: 1, owner: "Jamie", isPaidOff: false },
-      { name: "Paypal Mastercard - Jamie", creditor: "PayPal", debtType: "credit_card", currentBalance: "1433.87", minimumPayment: "52", dueDay: 1, owner: "Jamie", isPaidOff: false },
-      { name: "AMEX - Jamie", creditor: "American Express", debtType: "credit_card", currentBalance: "2047.89", minimumPayment: "40", dueDay: 1, owner: "Jamie", isPaidOff: false },
-      { name: "Affirm Payments - Jamie", creditor: "Affirm", debtType: "pay_later", currentBalance: "1672", minimumPayment: "320", owner: "Jamie", isPaidOff: false },
-      { name: "Barclays - Jamie", creditor: "Barclays", debtType: "credit_card", currentBalance: "1114.16", owner: "Jamie", isPaidOff: false },
-      { name: "Old Navy", creditor: "Old Navy", debtType: "credit_card", currentBalance: "1100", minimumPayment: "40", dueDay: 1, owner: "Jamie", isPaidOff: false },
+      { name: "NFCU Visa - Jamie #1", creditor: "Navy Federal", debtType: "credit_card", currentBalance: "19706", minimumPayment: "254", dueDay: 1, owner: "Jamie", isPaidOff: false },
+      { name: "NFCU Visa - Jamie #2", creditor: "Navy Federal", debtType: "credit_card", currentBalance: "19706", minimumPayment: "258", dueDay: 15, owner: "Jamie", isPaidOff: false },
+      { name: "USAA Visa - Jamie", creditor: "USAA", debtType: "credit_card", currentBalance: "6088.12", minimumPayment: "150", owner: "Jamie", isPaidOff: false },
+      { name: "Best Buy", creditor: "Best Buy", debtType: "credit_card", currentBalance: "6916", minimumPayment: "150", dueDay: 15, owner: "Jamie", isPaidOff: false },
+      { name: "Paypal Credit - Jamie", creditor: "PayPal", debtType: "credit_card", currentBalance: "4402", minimumPayment: "175", dueDay: 1, owner: "Jamie", isPaidOff: false },
+      { name: "Paypal Mastercard - Jamie", creditor: "PayPal", debtType: "credit_card", currentBalance: "1428", minimumPayment: "52", dueDay: 1, owner: "Jamie", isPaidOff: false },
+      { name: "AMEX - Jamie", creditor: "American Express", debtType: "credit_card", currentBalance: "1342", minimumPayment: "40", dueDay: 1, owner: "Jamie", isPaidOff: false },
+      { name: "Affirm Payments - Jamie", creditor: "Affirm", debtType: "pay_later", currentBalance: "1768.66", minimumPayment: "355.22", plannedPayment: "355.22", owner: "Jamie", isPaidOff: false, notes: "As of 9/15. Bi-monthly: Sep 30 $355.22, Oct 15 $199.77" },
+      { name: "Barclays - Jamie", creditor: "Barclays", debtType: "credit_card", currentBalance: "1114.16", owner: "Jamie", isPaidOff: false, notes: "Confirm live balance via direct Barclays access" },
+      { name: "Old Navy", creditor: "Old Navy", debtType: "credit_card", currentBalance: "828.73", minimumPayment: "40", dueDay: 1, owner: "Jamie", isPaidOff: false },
+      { name: "Afterpay - Jamie", creditor: "Afterpay", debtType: "pay_later", currentBalance: "144.25", minimumPayment: "87.84", plannedPayment: "87.84", owner: "Jamie", isPaidOff: false, notes: "Bi-monthly: Sep 30 $87.84, Oct 15 $56.41" },
+      { name: "Cherry Credit - Jamie", creditor: "Cherry", debtType: "pay_later", currentBalance: "186.55", minimumPayment: "93.29", plannedPayment: "93.29", owner: "Jamie", isPaidOff: false, notes: "Dental work. $93.29 due Oct/Nov then paid off" },
+      { name: "Upgrade Flights - Jamie", creditor: "Upgrade", debtType: "other", currentBalance: "221.02", minimumPayment: "77.21", plannedPayment: "77.21", owner: "Jamie", isPaidOff: false, notes: "$77.21 once a month" },
+      { name: "Upgrade Personal Loan - Jamie", creditor: "Upgrade", debtType: "other", currentBalance: "1805.47", minimumPayment: "82.52", plannedPayment: "82.52", owner: "Jamie", isPaidOff: false, notes: "$82.52 once a month" },
       { name: "Navy Federal Auto Loan", creditor: "Navy Federal", debtType: "auto_loan", currentBalance: "15512.01", minimumPayment: "300", owner: "Joint", isPaidOff: false, notes: "Lexus NX 2018" },
-      { name: "Student Loan - Kevin", creditor: "Department of Education", debtType: "student_loan", currentBalance: "149320.00", originalBalance: "149320.00", minimumPayment: "137", owner: "Kevin", isPaidOff: false, notes: "Imported from Excel (SC - Strawberry Cupcake)" },
-      { name: "Student Loan - Jamie", creditor: "Department of Education", debtType: "student_loan", currentBalance: "9498.91", originalBalance: "9498.91", minimumPayment: "0", owner: "Jamie", isPaidOff: false, notes: "Imported from Excel (HB - Honey Bunches)" },
+      { name: "Student Loan - Kevin", creditor: "Department of Education", debtType: "student_loan", currentBalance: "8303.14", originalBalance: "21000.00", minimumPayment: "0", owner: "Kevin", isPaidOff: false, notes: "Federal student loan (HB)" },
+      { name: "Student Loan - Jamie", creditor: "Department of Education", debtType: "student_loan", currentBalance: "163000.00", originalBalance: "163000.00", minimumPayment: "137", owner: "Jamie", isPaidOff: false, notes: "Federal student loan (SC). Total includes $9,498.91 for her PhD program." },
     ];
     await db.insert(debts).values(debtsData);
   }
@@ -217,7 +221,7 @@ export async function seedDatabase() {
       { name: "Car - SC", value: "14000", assetType: "vehicle", owner: "Kevin" },
       { name: "Car - HB", value: "4000", assetType: "vehicle", owner: "Jamie" },
       { name: "Roth IRA - SC", value: "1116.32", assetType: "retirement", owner: "Kevin" },
-      { name: "Roth IRA - HB", value: "51800", assetType: "retirement", owner: "Jamie" },
+      { name: "Roth IRA - HB", value: "51800", assetType: "retirement", owner: "Kevin", notes: "Schwab Roth IRA (HB)" },
       { name: "Traditional IRA - SC", value: "2649.73", assetType: "retirement", owner: "Kevin" },
       { name: "Traditional IRA - HB", value: "123201", assetType: "retirement", owner: "Jamie" },
       { name: "Booz Allen Hamilton 401k - HB", value: "63374.42", assetType: "retirement", owner: "Jamie" },

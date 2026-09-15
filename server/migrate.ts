@@ -50,8 +50,19 @@ export async function runMigrations() {
     )
   `);
   await db.execute(sql`
-    UPDATE accounts SET monthly_allocation = 200
-    WHERE monthly_allocation = 0 AND name ILIKE 'Kevin NFCU Checking'
+    UPDATE accounts
+    SET monthly_allocation = 0,
+        last_updated = NOW()
+    WHERE name ILIKE 'Kevin NFCU Checking'
+      AND monthly_allocation::numeric = 200
+  `);
+  await db.execute(sql`
+    UPDATE savings_allocations
+    SET amount = 0,
+        is_active = false,
+        notes = 'NFCU allowance paused — monthly allocation is $0'
+    WHERE name ILIKE 'Kevin NFCU Allowance'
+      AND amount::numeric = 200
   `);
   await db.execute(sql`
     UPDATE accounts SET monthly_allocation = 75
@@ -62,6 +73,190 @@ export async function runMigrations() {
     WHERE monthly_allocation = 0 AND (
       name ILIKE '%Schwab Roth%' OR name ILIKE 'Roth Contributory IRA'
     )
+  `);
+
+  // Jamie Sep 2025 sheet: split paycheck out of Family checking; refresh SC debt balances.
+  await db.execute(sql`
+    UPDATE accounts
+    SET monthly_allocation = 4954.10,
+        notes = 'Biweekly $2,477.05 × 2. Aug 2025: $1800 put back as we no longer pay for private schooling',
+        last_updated = NOW()
+    WHERE name ILIKE 'Family USAA Checking'
+      AND monthly_allocation IN (7550, 2735.24, 4954.10)
+  `);
+  await db.execute(sql`
+    UPDATE accounts
+    SET monthly_allocation = 4814.76,
+        notes = 'Same as Jamie Paycheck — biweekly $2,407.38 × 2',
+        last_updated = NOW()
+    WHERE name ILIKE 'Jamie USAA Checking'
+      AND monthly_allocation IN (0, 300, 4814.76)
+  `);
+  await db.execute(sql`
+    UPDATE incomes
+    SET amount = 4954.10,
+        notes = 'Biweekly $2,477.05 × 2 deposited to Family USAA Checking'
+    WHERE name = 'Family USAA Income'
+      AND amount::numeric IN (7550, 2735.24, 4954.10)
+  `);
+  await db.execute(sql`
+    UPDATE incomes
+    SET is_active = false,
+        amount = 0,
+        notes = 'Obsolete — replaced by Jamie Paycheck (same as Jamie USAA Checking monthly)'
+    WHERE name = 'Jamie USAA Income'
+  `);
+  await db.execute(sql`
+    UPDATE savings_allocations
+    SET is_active = false,
+        amount = 0,
+        notes = 'Obsolete $300 leftover removed Sep 2025'
+    WHERE name = 'Jamie USAA Savings'
+  `);
+  await db.execute(sql`
+    INSERT INTO incomes (name, amount, frequency, notes, is_active)
+    SELECT 'Jamie Paycheck', 4814.76, 'monthly',
+           'Biweekly $2,407.38 × 2 — same as Jamie USAA Checking monthly allocation', true
+    WHERE NOT EXISTS (SELECT 1 FROM incomes WHERE name = 'Jamie Paycheck')
+  `);
+  await db.execute(sql`
+    UPDATE incomes
+    SET amount = 4814.76,
+        notes = 'Biweekly $2,407.38 × 2 — same as Jamie USAA Checking monthly allocation',
+        is_active = true,
+        account_id = (SELECT id FROM accounts WHERE name ILIKE 'Jamie USAA Checking' LIMIT 1)
+    WHERE name = 'Jamie Paycheck'
+  `);
+  await db.execute(sql`
+    UPDATE expenses
+    SET notes = 'Average Cost — includes Chuck E. Cheese monthly pass (~$11.99)',
+        last_updated = NOW()
+    WHERE name ILIKE 'Eating out/Entertainment'
+  `);
+  await db.execute(sql`
+    UPDATE expenses
+    SET notes = 'Paused — payment tracked on Student Loan - Jamie debt',
+        is_active = false,
+        last_updated = NOW()
+    WHERE name ILIKE 'Student Loans (Jamie)'
+  `);
+
+  // Drop mistaken second Kevin loan if a prior migrate/seed created it
+  await db.execute(sql`
+    DELETE FROM debts WHERE name = 'Student Loan - Kevin #2'
+  `);
+
+  // One-time student loan corrections (skip once balances leave the pre-fix values)
+  await db.execute(sql`
+    UPDATE debts
+    SET current_balance = 8303.14,
+        original_balance = 21000.00,
+        minimum_payment = 0,
+        notes = 'Federal student loan (HB)',
+        owner = 'Kevin',
+        is_paid_off = false,
+        last_updated = NOW()
+    WHERE name ILIKE 'Student Loan - Kevin'
+      AND name NOT ILIKE '%#2%'
+      AND current_balance::numeric IN (149320, 8303.14)
+  `);
+  await db.execute(sql`
+    UPDATE debts
+    SET current_balance = 163000.00,
+        original_balance = 163000.00,
+        minimum_payment = 137,
+        notes = 'Federal student loan (SC). Total includes $9,498.91 for her PhD program.',
+        owner = 'Jamie',
+        is_paid_off = false,
+        last_updated = NOW()
+    WHERE name ILIKE 'Student Loan - Jamie'
+      AND current_balance::numeric IN (9498.91, 163000)
+  `);
+  await db.execute(sql`
+    UPDATE debts
+    SET notes = 'Federal student loan (SC). Total includes $9,498.91 for her PhD program.',
+        last_updated = NOW()
+    WHERE name ILIKE 'Student Loan - Jamie'
+      AND owner = 'Jamie'
+      AND (notes IS NULL OR notes NOT ILIKE '%PhD program%')
+  `);
+
+  // Jamie sheet balances — apply only while still at older seed figures
+  await db.execute(sql`
+    UPDATE debts SET current_balance = 19706, last_updated = NOW()
+    WHERE name = 'NFCU Visa - Jamie #1' AND current_balance::numeric IN (19316.58, 19706)
+  `);
+  await db.execute(sql`
+    UPDATE debts SET current_balance = 19706, last_updated = NOW()
+    WHERE name = 'NFCU Visa - Jamie #2' AND current_balance::numeric IN (19591.90, 19706)
+  `);
+  await db.execute(sql`
+    UPDATE debts SET current_balance = 6088.12, last_updated = NOW()
+    WHERE name = 'USAA Visa - Jamie' AND current_balance::numeric IN (6073.10, 6088.12)
+  `);
+  await db.execute(sql`
+    UPDATE debts SET current_balance = 6916, last_updated = NOW()
+    WHERE name = 'Best Buy' AND owner = 'Jamie' AND current_balance::numeric IN (7100, 6916)
+  `);
+  await db.execute(sql`
+    UPDATE debts SET current_balance = 4402, last_updated = NOW()
+    WHERE name = 'Paypal Credit - Jamie' AND current_balance::numeric IN (4987.88, 4402)
+  `);
+  await db.execute(sql`
+    UPDATE debts SET current_balance = 1428, last_updated = NOW()
+    WHERE name = 'Paypal Mastercard - Jamie' AND current_balance::numeric IN (1433.87, 1428)
+  `);
+  await db.execute(sql`
+    UPDATE debts SET current_balance = 1342, last_updated = NOW()
+    WHERE name = 'AMEX - Jamie' AND current_balance::numeric IN (2047.89, 1342)
+  `);
+  await db.execute(sql`
+    UPDATE debts
+    SET current_balance = 1768.66,
+        minimum_payment = 355.22,
+        planned_payment = 355.22,
+        notes = 'As of 9/15. Bi-monthly: Sep 30 $355.22, Oct 15 $199.77',
+        last_updated = NOW()
+    WHERE name = 'Affirm Payments - Jamie'
+      AND current_balance::numeric IN (1672, 1768.66)
+  `);
+  await db.execute(sql`
+    UPDATE debts SET current_balance = 828.73, last_updated = NOW()
+    WHERE name = 'Old Navy' AND owner = 'Jamie' AND current_balance::numeric IN (1100, 828.73)
+  `);
+  await db.execute(sql`
+    UPDATE debts
+    SET notes = 'Confirm live balance via direct Barclays access',
+        last_updated = NOW()
+    WHERE name = 'Barclays - Jamie'
+      AND NOT is_paid_off
+      AND (notes IS NULL OR notes NOT ILIKE '%Confirm live balance%')
+  `);
+
+  // New Jamie installment debts (idempotent insert)
+  await db.execute(sql`
+    INSERT INTO debts (name, creditor, debt_type, current_balance, minimum_payment, planned_payment, owner, is_paid_off, notes)
+    SELECT 'Afterpay - Jamie', 'Afterpay', 'pay_later', 144.25, 87.84, 87.84, 'Jamie', false,
+           'Bi-monthly: Sep 30 $87.84, Oct 15 $56.41'
+    WHERE NOT EXISTS (SELECT 1 FROM debts WHERE name = 'Afterpay - Jamie')
+  `);
+  await db.execute(sql`
+    INSERT INTO debts (name, creditor, debt_type, current_balance, minimum_payment, planned_payment, owner, is_paid_off, notes)
+    SELECT 'Cherry Credit - Jamie', 'Cherry', 'pay_later', 186.55, 93.29, 93.29, 'Jamie', false,
+           'Dental work. $93.29 due Oct/Nov then paid off'
+    WHERE NOT EXISTS (SELECT 1 FROM debts WHERE name = 'Cherry Credit - Jamie')
+  `);
+  await db.execute(sql`
+    INSERT INTO debts (name, creditor, debt_type, current_balance, minimum_payment, planned_payment, owner, is_paid_off, notes)
+    SELECT 'Upgrade Flights - Jamie', 'Upgrade', 'other', 221.02, 77.21, 77.21, 'Jamie', false,
+           '$77.21 once a month'
+    WHERE NOT EXISTS (SELECT 1 FROM debts WHERE name = 'Upgrade Flights - Jamie')
+  `);
+  await db.execute(sql`
+    INSERT INTO debts (name, creditor, debt_type, current_balance, minimum_payment, planned_payment, owner, is_paid_off, notes)
+    SELECT 'Upgrade Personal Loan - Jamie', 'Upgrade', 'other', 1805.47, 82.52, 82.52, 'Jamie', false,
+           '$82.52 once a month'
+    WHERE NOT EXISTS (SELECT 1 FROM debts WHERE name = 'Upgrade Personal Loan - Jamie')
   `);
 
   // Restore SC retirement assets to original static seed values.
@@ -82,11 +277,37 @@ export async function runMigrations() {
     WHERE name ILIKE 'Traditional IRA - SC'
   `);
 
+  // Schwab Roth IRA belongs to HB (Kevin) — not Jamie's section
+  await db.execute(sql`
+    UPDATE accounts
+    SET owner = 'Kevin',
+        name = 'Schwab Roth IRA - HB',
+        last_updated = NOW()
+    WHERE name ILIKE '%Schwab%Roth%'
+       OR (institution ILIKE '%Schwab%' AND name ILIKE '%roth%')
+  `);
+  await db.execute(sql`
+    UPDATE assets
+    SET owner = 'Kevin',
+        notes = COALESCE(notes, 'Schwab Roth IRA (HB)'),
+        last_updated = NOW()
+    WHERE name ILIKE 'Roth IRA - HB'
+       OR name ILIKE 'Schwab Roth IRA%'
+  `);
+
   // Ensure guest user password is set to the correct value
   const guestHash = await bcrypt.hash("community-money", 10);
   await db.execute(
     sql`UPDATE users SET password_hash = ${guestHash}, updated_at = NOW() WHERE username = 'guest'`
   );
+
+  // Mrs. La'Toya Ray, CPA — Jamie's financial therapist (read-only / role=user)
+  const latoyaHash = await bcrypt.hash("latoya-view", 10);
+  await db.execute(sql`
+    INSERT INTO users (username, email, password_hash, role)
+    SELECT 'latoyaray', 'latoyaray@example.com', ${latoyaHash}, 'user'
+    WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'latoyaray')
+  `);
 
   console.log("Database migrations completed.");
 }

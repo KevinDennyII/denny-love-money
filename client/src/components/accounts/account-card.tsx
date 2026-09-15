@@ -58,6 +58,7 @@ export function EditAccountDialog({ account, onClose }: { account: Account; onCl
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/incomes'] });
       toast({
         title: "Account updated",
         description: "Your account has been updated successfully.",

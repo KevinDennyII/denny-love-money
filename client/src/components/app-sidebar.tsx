@@ -11,6 +11,7 @@ import {
   Settings,
   Calculator,
   Lock,
+  Heart,
 } from "lucide-react";
 import {
   Sidebar,
@@ -30,6 +31,11 @@ const mainMenuItems = [
     title: "Dashboard",
     url: "/",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Jamie",
+    url: "/jamie",
+    icon: Heart,
   },
   {
     title: "Accounts",

@@ -80,12 +80,12 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
   });
 
   const onSubmit = (data: IncomeFormValues) => {
-    const { amount: _amount, ...rest } = data;
     const payload: InsertIncome = {
-      ...rest,
+      ...data,
       amount: linkedAccount
         ? String(linkedAccount.monthlyAllocation ?? "0")
-        : income.amount as string,
+        : String(data.amount),
+      accountId: data.accountId || null,
     } as InsertIncome;
     updateMutation.mutate(payload);
   };
@@ -136,17 +136,38 @@ function EditIncomeDialog({ income, accounts, onClose }: { income: Income; accou
                 </FormItem>
               )}
             />
-            <FormItem>
-              <FormLabel>Amount</FormLabel>
-              <p className="text-sm font-medium pt-2" data-testid="text-edit-income-amount">
-                {linkedAccount
-                  ? formatCurrency(parseFloat(String(linkedAccount.monthlyAllocation ?? "0")))
-                  : formatCurrency(parseFloat(income.amount as string))}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {linkedAccount ? "Synced from account monthly allocation" : "Update on the Accounts page"}
-              </p>
-            </FormItem>
+            {linkedAccount ? (
+              <FormItem>
+                <FormLabel>Amount</FormLabel>
+                <p className="text-sm font-medium pt-2" data-testid="text-edit-income-amount">
+                  {formatCurrency(parseFloat(String(linkedAccount.monthlyAllocation ?? "0")))}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Synced from account monthly allocation — edit the linked account to change this.
+                </p>
+              </FormItem>
+            ) : (
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        data-testid="input-edit-income-amount"
+                        disabled={readOnly}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
           <FormField
             control={form.control}

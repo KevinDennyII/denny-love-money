@@ -103,6 +103,12 @@ export class DatabaseStorage implements IStorage {
 
   async updateAccount(id: string, account: Partial<InsertAccount>): Promise<Account | undefined> {
     const [updated] = await db.update(accounts).set({ ...account, lastUpdated: new Date() }).where(eq(accounts.id, id)).returning();
+    if (updated && account.monthlyAllocation !== undefined) {
+      await db
+        .update(incomes)
+        .set({ amount: String(updated.monthlyAllocation) })
+        .where(eq(incomes.accountId, id));
+    }
     return updated;
   }
 

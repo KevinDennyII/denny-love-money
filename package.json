@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx -r dotenv/config server/index.ts",
+    "dev:infisical": "infisical run --env=dev --path=/ -- sh -c 'NODE_ENV=development npx tsx server/index.ts'",
     "dev:docker": "DATABASE_URL=postgresql://postgres:postgres@localhost:5435/denny_love_money NODE_ENV=development tsx -r dotenv/config server/index.ts",
     "build": "tsx script/build.ts",
     "start": "NODE_ENV=production node -r dotenv/config dist/index.cjs",

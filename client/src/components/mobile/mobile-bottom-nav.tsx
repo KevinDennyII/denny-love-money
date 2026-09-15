@@ -5,6 +5,13 @@ import {
   CreditCard,
   PiggyBank,
   MoreHorizontal,
+  Wallet,
+  Stethoscope,
+  TrendingUp,
+  Calculator,
+  Lock,
+  Settings,
+  Heart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,24 +23,17 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useState } from "react";
-import {
-  Wallet,
-  Stethoscope,
-  TrendingUp,
-  Calculator,
-  Lock,
-  Settings,
-} from "lucide-react";
 
 const primaryTabs = [
   { title: "Home", url: "/", icon: LayoutDashboard },
+  { title: "Jamie", url: "/jamie", icon: Heart },
   { title: "Budget", url: "/budget", icon: Receipt },
   { title: "Debts", url: "/debts", icon: CreditCard },
-  { title: "Savings", url: "/savings", icon: PiggyBank },
 ] as const;
 
 const moreItems = [
   { title: "Accounts", url: "/accounts", icon: Wallet },
+  { title: "Savings", url: "/savings", icon: PiggyBank },
   { title: "Debt Payoff", url: "/debt-payoff", icon: Calculator },
   { title: "Privacy Cards", url: "/privacy-transactions", icon: Lock },
   { title: "Medical & HSA", url: "/medical", icon: Stethoscope },

@@ -244,9 +244,9 @@ function accountDefaultsForRemote(remote: BanksyncAccount): InsertAccount {
   ) {
     owner = "Kevin";
   }
-  // Schwab Roth maps to net-worth "Roth IRA - HB" (seed owner Jamie)
+  // Schwab Roth maps to net-worth "Roth IRA - HB" (HB = Kevin / Honey Bunches)
   if (institution === "Charles Schwab" && /roth/i.test(lower)) {
-    owner = "Jamie";
+    owner = "Kevin";
   }
 
   let displayName = name;
@@ -331,12 +331,15 @@ export async function syncBanksyncBalances(): Promise<BanksyncSyncResult> {
       const asset = matchRetirementAsset(localAssets, remote);
       if (asset) {
         const previous = String(asset.value);
+        const isSchwabRoth = /roth/i.test(asset.name) && /\bhb\b/i.test(asset.name);
         await storage.updateAsset(asset.id, {
           value: balanceStr,
+          ...(isSchwabRoth ? { owner: "Kevin" as const } : {}),
           notes: `${BANKSYNC_LIVE_NOTE} (${institution})`,
         });
         // Keep in-memory list current for later emergency cash matching
         asset.value = balanceStr as typeof asset.value;
+        if (isSchwabRoth) asset.owner = "Kevin";
         asset.notes = `${BANKSYNC_LIVE_NOTE} (${institution})`;
         updates.push({
           kind: "asset",
@@ -398,7 +401,7 @@ export async function syncBanksyncBalances(): Promise<BanksyncSyncResult> {
     if (institution === "Charles Schwab" && /roth/i.test(remote.accountName)) {
       patch.name = "Schwab Roth IRA - HB";
       patch.accountType = "investment";
-      patch.owner = "Jamie";
+      patch.owner = "Kevin";
       patch.notes = `Synced from BankSync (Charles Schwab). ${BANKSYNC_LIVE_NOTE}`;
     }
 

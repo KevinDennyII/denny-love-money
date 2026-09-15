@@ -24,6 +24,7 @@ import DebtPayoff from "@/pages/debt-payoff";
 import AuthPage from "@/pages/auth";
 import OurStory from "@/pages/our-story";
 import PrivacyTransactions from "@/pages/privacy-transactions";
+import JamiePage from "@/pages/jamie";
 import React from "react";
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -110,6 +111,9 @@ function Router() {
       {/* Protected Routes */}
       <Route path="/">
         <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/jamie">
+        <ProtectedRoute component={JamiePage} />
       </Route>
       <Route path="/accounts">
         <ProtectedRoute component={Accounts} />

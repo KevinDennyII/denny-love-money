@@ -54,6 +54,7 @@ Pulls live balances from linked banks (USAA, Chime, Charles Schwab, Navy Federal
 - `BANKSYNC_API_KEY` — API key (`bsk_…`)
 - `BANKSYNC_AUTO_SYNC_MINUTES` — background sync interval (`0` to disable)
 - `BANKSYNC_EMERGENCY_LAST4` / `BANKSYNC_EMERGENCY_GOAL` — emergency fund last4 and minimum goal
+- `BANKSYNC_JAMIE_CHIME_LAST4` — optional; Jamie's personal Chime last4 so sync keeps it separate from family Chime Checking
 
 App endpoints: `POST /api/banksync/sync`, `GET /api/banksync/status`, `GET /api/banksync/emergency`.
 

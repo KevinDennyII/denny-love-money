@@ -49,6 +49,20 @@ export async function runMigrations() {
       name ILIKE 'Chime Prepaid%' OR name ILIKE 'Chime Checking'
     )
   `);
+  // Ensure family Chime Savings exists as its own row (BankSync fills the live balance)
+  await db.execute(sql`
+    INSERT INTO accounts (
+      name, institution, account_number, account_type,
+      monthly_allocation, current_balance, owner, notes, is_active
+    )
+    SELECT
+      'Chime Savings', 'Chime', '', 'savings',
+      0, 0, 'Joint',
+      'Chime savings (synced via BankSync when linked)', true
+    WHERE NOT EXISTS (
+      SELECT 1 FROM accounts WHERE name ILIKE 'Chime Savings'
+    )
+  `);
   await db.execute(sql`
     UPDATE accounts
     SET monthly_allocation = 0,

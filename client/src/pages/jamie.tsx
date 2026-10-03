@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, getDebtPayoffProgress } from "@/lib/formatters";
 import { getIncomeDisplayAmount } from "@/lib/income";
+import { JAMIE_PAYCHECK_PLAN as PLAN } from "@/lib/jamie-paycheck-plan";
 import {
   Wallet,
   CreditCard,
@@ -14,6 +15,8 @@ import {
   TrendingUp,
   ArrowRight,
   GraduationCap,
+  ArrowDown,
+  PauseCircle,
 } from "lucide-react";
 import type { Account, Asset, Debt, Expense, Income, SavingsAllocation } from "@shared/schema";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -71,6 +74,93 @@ function sumBalances(debts: Debt[]): number {
   return debts.reduce((sum, d) => sum + money(d.currentBalance), 0);
 }
 
+function findJamieChimeChecking(accounts: Account[]): Account | undefined {
+  return accounts.find(
+    (a) =>
+      a.owner === "Jamie" &&
+      a.isActive &&
+      /chime/i.test(a.name) &&
+      a.accountType === "checking" &&
+      !/savings/i.test(a.name)
+  );
+}
+
+function findJamieUsaaChecking(accounts: Account[]): Account | undefined {
+  return accounts.find((a) => a.owner === "Jamie" && a.isActive && /usaa/i.test(a.name) && /checking/i.test(a.name));
+}
+
+function PaycheckFlowCard() {
+  const rows = [
+    {
+      label: "Chime Savings",
+      detail: "Settlement pot — money that would have paid credit cards",
+      perCheck: PLAN.toSavingsPerCheck,
+      monthly: PLAN.toSavingsMonthly,
+      tone: "text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      label: "Stays in Jamie Chime",
+      detail: "Your personal float for the next two weeks",
+      perCheck: PLAN.keepInChimePerCheck,
+      monthly: PLAN.keepInChimeMonthly,
+      tone: "text-foreground",
+    },
+    {
+      label: "USAA Checking",
+      detail: "Fun money",
+      perCheck: PLAN.funMoneyPerCheck,
+      monthly: PLAN.funMoneyMonthly,
+      tone: "text-amber-600 dark:text-amber-400",
+    },
+  ] as const;
+
+  return (
+    <Card data-testid="card-paycheck-flow" className="border-primary/20 bg-primary/5">
+      <CardHeader className="pb-3">
+        <CardDescription>Every paycheck (twice a month)</CardDescription>
+        <CardTitle className="text-2xl flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span>{formatCurrency(PLAN.perCheck)}</span>
+          <span className="text-sm font-normal text-muted-foreground">
+            lands in Jamie Chime Checking
+          </span>
+        </CardTitle>
+        <p className="text-sm text-muted-foreground pt-1">
+          Then it splits three ways — same numbers every check, nothing left over.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex justify-center text-muted-foreground" aria-hidden>
+          <ArrowDown className="h-5 w-5" />
+        </div>
+        <ul className="space-y-3">
+          {rows.map((row) => (
+            <li
+              key={row.label}
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 rounded-lg border border-border/60 bg-background/80 px-4 py-3"
+            >
+              <div className="min-w-0">
+                <p className={`font-semibold ${row.tone}`}>{row.label}</p>
+                <p className="text-xs text-muted-foreground">{row.detail}</p>
+              </div>
+              <div className="text-left sm:text-right shrink-0">
+                <p className="font-semibold tabular-nums">{formatCurrency(row.perCheck)} / check</p>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  {formatCurrency(row.monthly)} / month
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-muted-foreground pt-1">
+          Monthly total {formatCurrency(PLAN.monthly)} = savings {formatCurrency(PLAN.toSavingsMonthly)}{" "}
+          + Chime {formatCurrency(PLAN.keepInChimeMonthly)} + fun money{" "}
+          {formatCurrency(PLAN.funMoneyMonthly)}.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function JamiePage() {
   const { readOnly } = useAuth();
   const { data: accounts = [], isLoading: accountsLoading } = useQuery<Account[]>({
@@ -116,10 +206,11 @@ export default function JamiePage() {
   const consumerDebts = activeDebts.filter((d) => d.debtType !== "student_loan");
 
   const paycheck = jamieIncomes.find((i) => /paycheck/i.test(i.name));
-  const checking = jamieAccounts.find((a) => /checking/i.test(a.name));
+  const chimeChecking = findJamieChimeChecking(accounts);
+  const usaaChecking = findJamieUsaaChecking(accounts);
   const paycheckAmount = paycheck
-    ? getIncomeDisplayAmount(paycheck, accountById(paycheck.accountId))
-    : money(checking?.monthlyAllocation);
+    ? money(paycheck.amount) || PLAN.monthly
+    : PLAN.monthly;
 
   const totalIncome = jamieIncomes.reduce(
     (sum, i) => sum + getIncomeDisplayAmount(i, accountById(i.accountId)),
@@ -129,6 +220,7 @@ export default function JamiePage() {
   const totalExpenses = jamieExpenses.reduce((sum, e) => sum + money(e.budgetedAmount), 0);
   const totalDebt = sumBalances(consumerDebts);
   const creditTotal = sumBalances(creditCards);
+  const creditMinMonthly = creditCards.reduce((sum, d) => sum + money(d.minimumPayment), 0);
   const studentLoanTotal = sumBalances(studentLoans);
   const studentLoanMin = studentLoans.reduce((sum, d) => sum + money(d.minimumPayment), 0);
   const microBalanceTotal = sumBalances(microDebts);
@@ -141,6 +233,15 @@ export default function JamiePage() {
           studentLoanMin > 0 ? ` · ${formatCurrency(studentLoanMin)} min/mo` : ""
         }`;
 
+  const orderedJamieAccounts = [...jamieAccounts].sort((a, b) => {
+    const rank = (acct: Account) => {
+      if (/chime/i.test(acct.name) && acct.accountType === "checking") return 0;
+      if (/usaa/i.test(acct.name) && /checking/i.test(acct.name)) return 1;
+      return 2;
+    };
+    return rank(a) - rank(b);
+  });
+
   return (
     <div className="space-y-6" data-testid="page-jamie">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -152,7 +253,7 @@ export default function JamiePage() {
             <OwnerBadge owner="Jamie" />
           </div>
           <p className="text-muted-foreground">
-            Your paycheck, checking, debts, and monthly micro fees — same shared data as the family app.
+            Your paycheck plan, accounts, and debts — same shared data as the family app.
             {readOnly
               ? " Sign in as SC to edit balances here."
               : " Use Edit on any row — changes save to the database and show everywhere."}
@@ -161,23 +262,64 @@ export default function JamiePage() {
         <AddDebtDialog />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <PaycheckFlowCard />
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Paycheck (monthly)"
           value={formatCurrency(paycheckAmount)}
-          description={paycheck ? "Biweekly × 2 into Jamie checking" : "From Jamie checking allocation"}
+          description={`${formatCurrency(PLAN.perCheck)} × 2 into Jamie Chime`}
           icon={Wallet}
           trend="up"
           isLoading={isLoading}
         />
         <StatCard
-          title="Checking allocation"
-          value={formatCurrency(money(checking?.monthlyAllocation))}
-          description="Matches Jamie Paycheck monthly"
+          title="Settlement pot"
+          value={formatCurrency(PLAN.toSavingsMonthly)}
+          description={`${formatCurrency(PLAN.toSavingsPerCheck)} / check → Chime Savings`}
+          icon={PiggyBank}
+          trend="up"
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="Your Chime float"
+          value={formatCurrency(PLAN.keepInChimeMonthly)}
+          description={`${formatCurrency(PLAN.keepInChimePerCheck)} kept each paycheck`}
           icon={Landmark}
           trend="neutral"
           isLoading={isLoading}
         />
+        <StatCard
+          title="Fun money (USAA)"
+          value={formatCurrency(PLAN.funMoneyMonthly)}
+          description={`${formatCurrency(PLAN.funMoneyPerCheck)} / check to USAA Checking`}
+          icon={Wallet}
+          trend="neutral"
+          isLoading={isLoading}
+        />
+      </div>
+
+      <Card className="border-amber-500/30 bg-amber-500/5" data-testid="card-cc-pause">
+        <CardHeader className="pb-2">
+          <div className="flex items-start gap-3">
+            <PauseCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <CardTitle className="text-base">Credit cards — pause for settlement</CardTitle>
+              <CardDescription className="text-sm leading-relaxed">
+                We are <span className="font-medium text-foreground">not</span> paying Jamie&apos;s credit
+                cards right now. That money goes into the Chime Savings settlement pot instead, so it is
+                ready when settlements come. Open card balances still show below for tracking
+                {creditMinMonthly > 0
+                  ? ` (about ${formatCurrency(creditMinMonthly)}/mo in former minimums)`
+                  : ""}
+                .
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <StatCard
           title="Active debt"
           value={formatCurrency(totalDebt)}
@@ -261,15 +403,20 @@ export default function JamiePage() {
       <DashboardSection title="Jamie accounts" icon={Wallet}>
         {accountsLoading ? (
           <Skeleton className="h-24 w-full" />
-        ) : jamieAccounts.length === 0 ? (
+        ) : orderedJamieAccounts.length === 0 ? (
           <p className="text-sm text-muted-foreground">No Jamie accounts.</p>
         ) : (
           <div className="space-y-3">
-            {jamieAccounts.map((account) => (
+            {orderedJamieAccounts.map((account) => (
               <AccountCard key={account.id} account={account} mode="monthly" />
             ))}
             <p className="text-xs text-muted-foreground">
-              Editing Jamie USAA Checking monthly allocation also updates Jamie Paycheck when they are linked.
+              {chimeChecking
+                ? `Chime Checking planned keep: ${formatCurrency(money(chimeChecking.monthlyAllocation))}/mo.`
+                : "Add Jamie Chime Checking when ready (not synced yet)."}{" "}
+              {usaaChecking
+                ? `USAA fun money: ${formatCurrency(money(usaaChecking.monthlyAllocation))}/mo.`
+                : null}
             </p>
           </div>
         )}
@@ -280,7 +427,7 @@ export default function JamiePage() {
           {jamieSavings.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Jamie savings</CardDescription>
+                <CardDescription>Jamie savings &amp; transfers</CardDescription>
                 <CardTitle className="text-2xl">{formatCurrency(totalSavings)}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -327,7 +474,7 @@ export default function JamiePage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <DebtCategory title="Credit cards" icon={<CreditCard className="h-5 w-5" />} debts={creditCards} />
+          <DebtCategory title="Credit cards (paused)" icon={<CreditCard className="h-5 w-5" />} debts={creditCards} />
           <DebtCategory
             title="Micro loans & installments"
             icon={<ShoppingBag className="h-5 w-5" />}

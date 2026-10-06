@@ -336,8 +336,8 @@ export async function runMigrations() {
     WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'latoyaray')
   `);
 
-  // Oct 2026 — Jamie paycheck plan: DD → Chime Checking, then split each check.
-  // Net $2,407.38 × 2 = $4,814.76 → Savings $3,214.76 + Chime keep $1,300 + USAA fun $300.
+  // Oct 2026 — Jamie paycheck: DD → Chime Checking, then split.
+  // Confirmed: Settlement $1,700 + Family sink $300. Chime float + USAA TBD.
   await db.execute(sql`
     INSERT INTO accounts (
       name, institution, account_number, account_type,
@@ -345,8 +345,8 @@ export async function runMigrations() {
     )
     SELECT
       'Jamie Chime Checking', 'Chime', '', 'checking',
-      1300, 0, 'Jamie',
-      'Main DD landing. Keeps $650/paycheck ($1,300/mo); rest transfers out. Not BankSync’d yet.',
+      0, 0, 'Jamie',
+      'Main DD landing. Personal float amount TBD. Not BankSync’d yet.',
       true
     WHERE NOT EXISTS (
       SELECT 1 FROM accounts
@@ -359,8 +359,8 @@ export async function runMigrations() {
   `);
   await db.execute(sql`
     UPDATE accounts
-    SET monthly_allocation = 1300,
-        notes = 'Main DD landing. Keeps $650/paycheck ($1,300/mo); rest transfers out. Not BankSync’d yet.',
+    SET monthly_allocation = 0,
+        notes = 'Main DD landing. Personal float amount TBD. Not BankSync’d yet.',
         is_active = true,
         last_updated = NOW()
     WHERE owner = 'Jamie'
@@ -370,24 +370,53 @@ export async function runMigrations() {
       AND name NOT ILIKE '%savings%'
   `);
   await db.execute(sql`
+    INSERT INTO accounts (
+      name, institution, account_number, account_type,
+      monthly_allocation, current_balance, owner, notes, is_active
+    )
+    SELECT
+      'Jamie Chime Savings', 'Chime', '', 'savings',
+      300, 0, 'Jamie',
+      'Family sink / travel — $150/paycheck ($300/mo) from Jamie paycheck',
+      true
+    WHERE NOT EXISTS (
+      SELECT 1 FROM accounts
+      WHERE owner = 'Jamie'
+        AND institution ILIKE 'Chime'
+        AND account_type = 'savings'
+        AND name ILIKE '%chime%savings%'
+    )
+  `);
+  await db.execute(sql`
     UPDATE accounts
     SET monthly_allocation = 300,
-        notes = 'Fun money — $150/paycheck ($300/mo) from Jamie Chime',
+        notes = 'Family sink / travel — $150/paycheck ($300/mo) from Jamie paycheck',
+        is_active = true,
+        last_updated = NOW()
+    WHERE owner = 'Jamie'
+      AND institution ILIKE 'Chime'
+      AND account_type = 'savings'
+  `);
+  await db.execute(sql`
+    UPDATE accounts
+    SET monthly_allocation = 0,
+        notes = 'USAA allocation amount TBD',
         last_updated = NOW()
     WHERE name ILIKE 'Jamie USAA Checking'
   `);
   await db.execute(sql`
     UPDATE accounts
-    SET monthly_allocation = 3214.76,
-        notes = 'Jamie settlement pot — $1,607.38/paycheck ($3,214.76/mo). CC payments paused; save for settlements.',
+    SET monthly_allocation = 1700,
+        notes = 'Jamie settlement pot — $850/paycheck ($1,700/mo). CC payments paused; save for settlements.',
         last_updated = NOW()
     WHERE name ILIKE 'Chime Savings'
       AND (owner = 'Joint' OR owner IS NULL OR owner = '')
+      AND name NOT ILIKE '%jamie%'
   `);
   await db.execute(sql`
     UPDATE incomes
     SET amount = 4814.76,
-        notes = 'Biweekly $2,407.38 × 2 — DD to Jamie Chime Checking, then split (see Jamie page)',
+        notes = 'Biweekly $2,407.38 × 2 — DD to Jamie Chime Checking, then split (see Jamie page). Settlement $1,700 + family sink $300 confirmed; Chime float + USAA TBD.',
         is_active = true,
         account_id = NULL
     WHERE name = 'Jamie Paycheck'
@@ -396,35 +425,43 @@ export async function runMigrations() {
     INSERT INTO savings_allocations (name, amount, notes, is_active, account_id)
     SELECT
       'Jamie Settlement Pot',
-      3214.76,
-      'From Jamie paycheck → Chime Savings. CC mins paused; hold for future settlements. $1,607.38 × 2',
+      1700,
+      'From Jamie paycheck → Chime Savings. CC mins paused; hold for future settlements. $850 × 2',
       true,
-      (SELECT id FROM accounts WHERE name ILIKE 'Chime Savings' AND (owner = 'Joint' OR owner IS NULL OR owner = '') LIMIT 1)
+      (SELECT id FROM accounts WHERE name ILIKE 'Chime Savings' AND (owner = 'Joint' OR owner IS NULL OR owner = '') AND name NOT ILIKE '%jamie%' LIMIT 1)
     WHERE NOT EXISTS (SELECT 1 FROM savings_allocations WHERE name = 'Jamie Settlement Pot')
   `);
   await db.execute(sql`
     UPDATE savings_allocations
-    SET amount = 3214.76,
+    SET amount = 1700,
         is_active = true,
-        notes = 'From Jamie paycheck → Chime Savings. CC mins paused; hold for future settlements. $1,607.38 × 2',
-        account_id = (SELECT id FROM accounts WHERE name ILIKE 'Chime Savings' AND (owner = 'Joint' OR owner IS NULL OR owner = '') LIMIT 1)
+        notes = 'From Jamie paycheck → Chime Savings. CC mins paused; hold for future settlements. $850 × 2',
+        account_id = (SELECT id FROM accounts WHERE name ILIKE 'Chime Savings' AND (owner = 'Joint' OR owner IS NULL OR owner = '') AND name NOT ILIKE '%jamie%' LIMIT 1)
     WHERE name = 'Jamie Settlement Pot'
   `);
   await db.execute(sql`
     INSERT INTO savings_allocations (name, amount, notes, is_active, account_id)
     SELECT
-      'Jamie Fun Money',
+      'Jamie Family Sink',
       300,
-      'From Jamie paycheck → USAA Checking. $150 × 2',
+      'From Jamie paycheck → Jamie Chime Savings (family sink / travel). $150 × 2',
       true,
-      (SELECT id FROM accounts WHERE name ILIKE 'Jamie USAA Checking' LIMIT 1)
-    WHERE NOT EXISTS (SELECT 1 FROM savings_allocations WHERE name = 'Jamie Fun Money')
+      (SELECT id FROM accounts WHERE owner = 'Jamie' AND institution ILIKE 'Chime' AND account_type = 'savings' LIMIT 1)
+    WHERE NOT EXISTS (SELECT 1 FROM savings_allocations WHERE name = 'Jamie Family Sink')
   `);
   await db.execute(sql`
     UPDATE savings_allocations
     SET amount = 300,
         is_active = true,
-        notes = 'From Jamie paycheck → USAA Checking. $150 × 2',
+        notes = 'From Jamie paycheck → Jamie Chime Savings (family sink / travel). $150 × 2',
+        account_id = (SELECT id FROM accounts WHERE owner = 'Jamie' AND institution ILIKE 'Chime' AND account_type = 'savings' LIMIT 1)
+    WHERE name = 'Jamie Family Sink'
+  `);
+  await db.execute(sql`
+    UPDATE savings_allocations
+    SET amount = 0,
+        is_active = false,
+        notes = 'USAA Checking allocation amount TBD',
         account_id = (SELECT id FROM accounts WHERE name ILIKE 'Jamie USAA Checking' LIMIT 1)
     WHERE name = 'Jamie Fun Money'
   `);

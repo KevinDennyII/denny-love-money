@@ -25,11 +25,12 @@ export async function seedDatabase() {
     console.log("Seeding Accounts...");
     const accountsData = [
       { name: "Family USAA Checking", institution: "USAA", accountNumber: "5494", accountType: "checking", monthlyAllocation: "4954.10", currentBalance: "0", owner: "Joint", notes: "Biweekly $2,477.05 × 2. Aug 2025: $1800 put back as we no longer pay for private schooling", isActive: true },
-      { name: "Jamie Chime Checking", institution: "Chime", accountNumber: "", accountType: "checking", monthlyAllocation: "1300", currentBalance: "0", owner: "Jamie", notes: "Main DD landing. Keeps $650/paycheck ($1,300/mo); rest transfers out. Not BankSync’d yet.", isActive: true },
-      { name: "Jamie USAA Checking", institution: "USAA", accountNumber: "1986", accountType: "checking", monthlyAllocation: "300", currentBalance: "0", owner: "Jamie", notes: "Fun money — $150/paycheck ($300/mo) from Jamie Chime", isActive: true },
+      { name: "Jamie Chime Checking", institution: "Chime", accountNumber: "", accountType: "checking", monthlyAllocation: "0", currentBalance: "0", owner: "Jamie", notes: "Main DD landing. Personal float amount TBD. Not BankSync’d yet.", isActive: true },
+      { name: "Jamie Chime Savings", institution: "Chime", accountNumber: "", accountType: "savings", monthlyAllocation: "300", currentBalance: "0", owner: "Jamie", notes: "Family sink / travel — $150/paycheck ($300/mo) from Jamie paycheck", isActive: true },
+      { name: "Jamie USAA Checking", institution: "USAA", accountNumber: "1986", accountType: "checking", monthlyAllocation: "0", currentBalance: "0", owner: "Jamie", notes: "USAA allocation amount TBD", isActive: true },
       { name: "USAA Emergency Savings", institution: "USAA", accountNumber: "1559", accountType: "savings", monthlyAllocation: "0", currentBalance: "0", owner: "Joint", notes: "Emergency fund — keep at least $1500", isActive: true },
       { name: "Chime Prepaid Visa", institution: "Chime", accountNumber: "", accountType: "checking", monthlyAllocation: "4179", currentBalance: "0", owner: "Joint", notes: "Bills paid with this Prepaid Card can be found on the monthly expenses sheet", isActive: true },
-      { name: "Chime Savings", institution: "Chime", accountNumber: "", accountType: "savings", monthlyAllocation: "3214.76", currentBalance: "0", owner: "Joint", notes: "Jamie settlement pot — $1,607.38/paycheck ($3,214.76/mo). CC payments paused; save for settlements.", isActive: true },
+      { name: "Chime Savings", institution: "Chime", accountNumber: "", accountType: "savings", monthlyAllocation: "1700", currentBalance: "0", owner: "Joint", notes: "Jamie settlement pot — $850/paycheck ($1,700/mo). CC payments paused; save for settlements.", isActive: true },
       { name: "Kevin NFCU Checking", institution: "Navy Federal", accountNumber: "7710", accountType: "checking", monthlyAllocation: "0", currentBalance: "0", owner: "Kevin", notes: "Allowance account — monthly currently $0", isActive: true },
       { name: "Kevin Greenwood Checking", institution: "Greenwood", accountNumber: "", accountType: "savings", monthlyAllocation: "75", currentBalance: "0", owner: "Kevin", notes: "Traveling Fund, 4.15% APR Savings Account", isActive: true },
       { name: "Kevin NFCU Savings", institution: "Navy Federal", accountNumber: "", accountType: "savings", monthlyAllocation: "0", currentBalance: "0", owner: "Kevin", isActive: true },
@@ -45,7 +46,7 @@ export async function seedDatabase() {
     console.log("Seeding Incomes...");
     const incomesData = [
       { name: "Family USAA Income", amount: "4954.10", frequency: "monthly", notes: "Biweekly $2,477.05 × 2 deposited to Family USAA Checking", isActive: true },
-      { name: "Jamie Paycheck", amount: "4814.76", frequency: "monthly", notes: "Biweekly $2,407.38 × 2 — DD to Jamie Chime Checking, then split (see Jamie page)", isActive: true },
+      { name: "Jamie Paycheck", amount: "4814.76", frequency: "monthly", notes: "Biweekly $2,407.38 × 2 — DD to Jamie Chime Checking, then split (see Jamie page). Settlement $1,700 + family sink $300 confirmed; Chime float + USAA TBD.", isActive: true },
       { name: "Chime Prepaid Income", amount: "4179", frequency: "monthly", notes: "Income for bills paid with Chime", isActive: true },
     ];
     await db.insert(incomes).values(incomesData);
@@ -57,8 +58,9 @@ export async function seedDatabase() {
     console.log("Seeding Savings Allocations...");
     const savingsData = [
       { name: "Jamie USAA Savings", amount: "0", notes: "Obsolete $300 leftover removed Sep 2025", isActive: false },
-      { name: "Jamie Settlement Pot", amount: "3214.76", notes: "From Jamie paycheck → Chime Savings. CC mins paused; hold for future settlements. $1,607.38 × 2", isActive: true },
-      { name: "Jamie Fun Money", amount: "300", notes: "From Jamie paycheck → USAA Checking. $150 × 2", isActive: true },
+      { name: "Jamie Settlement Pot", amount: "1700", notes: "From Jamie paycheck → Chime Savings. CC mins paused; hold for future settlements. $850 × 2", isActive: true },
+      { name: "Jamie Family Sink", amount: "300", notes: "From Jamie paycheck → Jamie Chime Savings (family sink / travel). $150 × 2", isActive: true },
+      { name: "Jamie Fun Money", amount: "0", notes: "USAA Checking allocation amount TBD", isActive: false },
       { name: "Kevin NFCU Allowance", amount: "0", notes: "NFCU allowance paused — monthly allocation is $0", isActive: false },
       { name: "Kevin Greenwood Traveling", amount: "75", notes: "Traveling Fund, 4.15% APR Savings Account", isActive: true },
       { name: "Kevin Roth IRA", amount: "100", notes: "Retirement contribution", isActive: true },

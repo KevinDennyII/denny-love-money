@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, getDebtPayoffProgress } from "@/lib/formatters";
 import { getIncomeDisplayAmount } from "@/lib/income";
-import { JAMIE_PAYCHECK_PLAN as PLAN } from "@/lib/jamie-paycheck-plan";
+import { JAMIE_PAYCHECK_PLAN as PLAN, paycheckTbdMonthly } from "@/lib/jamie-paycheck-plan";
 import {
   Wallet,
   CreditCard,
@@ -89,30 +89,49 @@ function findJamieUsaaChecking(accounts: Account[]): Account | undefined {
   return accounts.find((a) => a.owner === "Jamie" && a.isActive && /usaa/i.test(a.name) && /checking/i.test(a.name));
 }
 
+function formatPlanAmount(amount: number | null, suffix: string): string {
+  if (amount == null) return `TBD${suffix}`;
+  return `${formatCurrency(amount)}${suffix}`;
+}
+
 function PaycheckFlowCard() {
-  const rows = [
+  const tbdMonthly = paycheckTbdMonthly();
+  const rows: {
+    label: string;
+    detail: string;
+    perCheck: number | null;
+    monthly: number | null;
+    tone: string;
+  }[] = [
     {
-      label: "Chime Savings",
-      detail: "Settlement pot — money that would have paid credit cards",
-      perCheck: PLAN.toSavingsPerCheck,
-      monthly: PLAN.toSavingsMonthly,
+      label: "Chime Savings (Settlement Pot)",
+      detail: "Money that would have paid credit cards",
+      perCheck: PLAN.settlementPerCheck,
+      monthly: PLAN.settlementMonthly,
       tone: "text-emerald-600 dark:text-emerald-400",
     },
     {
-      label: "Stays in Jamie Chime",
-      detail: "Your personal float for the next two weeks",
-      perCheck: PLAN.keepInChimePerCheck,
-      monthly: PLAN.keepInChimeMonthly,
-      tone: "text-foreground",
+      label: "Jamie Chime Savings",
+      detail: "Family sink / travel funds",
+      perCheck: PLAN.familySinkPerCheck,
+      monthly: PLAN.familySinkMonthly,
+      tone: "text-emerald-600 dark:text-emerald-400",
     },
     {
-      label: "USAA Checking",
-      detail: "Fun money",
-      perCheck: PLAN.funMoneyPerCheck,
-      monthly: PLAN.funMoneyMonthly,
-      tone: "text-amber-600 dark:text-amber-400",
+      label: "Jamie Chime Checking",
+      detail: "Personal float for the next two weeks",
+      perCheck: PLAN.keepInChimePerCheck,
+      monthly: PLAN.keepInChimeMonthly,
+      tone: "text-muted-foreground",
     },
-  ] as const;
+    {
+      label: "Jamie USAA Checking",
+      detail: "Fun money / personal USAA",
+      perCheck: PLAN.usaaPerCheck,
+      monthly: PLAN.usaaMonthly,
+      tone: "text-muted-foreground",
+    },
+  ];
 
   return (
     <Card data-testid="card-paycheck-flow" className="border-primary/20 bg-primary/5">
@@ -125,7 +144,7 @@ function PaycheckFlowCard() {
           </span>
         </CardTitle>
         <p className="text-sm text-muted-foreground pt-1">
-          Then it splits three ways — same numbers every check, nothing left over.
+          Then it splits — settlement and family sink are set; Chime float and USAA amounts TBD.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -143,18 +162,20 @@ function PaycheckFlowCard() {
                 <p className="text-xs text-muted-foreground">{row.detail}</p>
               </div>
               <div className="text-left sm:text-right shrink-0">
-                <p className="font-semibold tabular-nums">{formatCurrency(row.perCheck)} / check</p>
+                <p className="font-semibold tabular-nums">
+                  {formatPlanAmount(row.perCheck, " / check")}
+                </p>
                 <p className="text-xs text-muted-foreground tabular-nums">
-                  {formatCurrency(row.monthly)} / month
+                  {formatPlanAmount(row.monthly, " / month")}
                 </p>
               </div>
             </li>
           ))}
         </ul>
         <p className="text-xs text-muted-foreground pt-1">
-          Monthly total {formatCurrency(PLAN.monthly)} = savings {formatCurrency(PLAN.toSavingsMonthly)}{" "}
-          + Chime {formatCurrency(PLAN.keepInChimeMonthly)} + fun money{" "}
-          {formatCurrency(PLAN.funMoneyMonthly)}.
+          Monthly total {formatCurrency(PLAN.monthly)} = settlement{" "}
+          {formatCurrency(PLAN.settlementMonthly)} + family sink {formatCurrency(PLAN.familySinkMonthly)}{" "}
+          + Chime Checking &amp; USAA (amounts TBD, {formatCurrency(tbdMonthly)} remaining).
         </p>
       </CardContent>
     </Card>
@@ -275,25 +296,25 @@ export default function JamiePage() {
         />
         <StatCard
           title="Settlement pot"
-          value={formatCurrency(PLAN.toSavingsMonthly)}
-          description={`${formatCurrency(PLAN.toSavingsPerCheck)} / check → Chime Savings`}
+          value={formatCurrency(PLAN.settlementMonthly)}
+          description={`${formatCurrency(PLAN.settlementPerCheck)} / check → Chime Savings`}
           icon={PiggyBank}
           trend="up"
           isLoading={isLoading}
         />
         <StatCard
-          title="Your Chime float"
-          value={formatCurrency(PLAN.keepInChimeMonthly)}
-          description={`${formatCurrency(PLAN.keepInChimePerCheck)} kept each paycheck`}
-          icon={Landmark}
-          trend="neutral"
+          title="Family sink / travel"
+          value={formatCurrency(PLAN.familySinkMonthly)}
+          description={`${formatCurrency(PLAN.familySinkPerCheck)} / check → Jamie Chime Savings`}
+          icon={PiggyBank}
+          trend="up"
           isLoading={isLoading}
         />
         <StatCard
-          title="Fun money (USAA)"
-          value={formatCurrency(PLAN.funMoneyMonthly)}
-          description={`${formatCurrency(PLAN.funMoneyPerCheck)} / check to USAA Checking`}
-          icon={Wallet}
+          title="Chime float + USAA"
+          value="TBD"
+          description={`${formatCurrency(paycheckTbdMonthly())} / mo remaining to allocate`}
+          icon={Landmark}
           trend="neutral"
           isLoading={isLoading}
         />
@@ -411,12 +432,12 @@ export default function JamiePage() {
               <AccountCard key={account.id} account={account} mode="monthly" />
             ))}
             <p className="text-xs text-muted-foreground">
-              {chimeChecking
-                ? `Chime Checking planned keep: ${formatCurrency(money(chimeChecking.monthlyAllocation))}/mo.`
-                : "Add Jamie Chime Checking when ready (not synced yet)."}{" "}
-              {usaaChecking
-                ? `USAA fun money: ${formatCurrency(money(usaaChecking.monthlyAllocation))}/mo.`
-                : null}
+              Settlement pot {formatCurrency(PLAN.settlementMonthly)}/mo and family sink{" "}
+              {formatCurrency(PLAN.familySinkMonthly)}/mo are set. Jamie Chime Checking float and USAA
+              Checking amounts are TBD
+              {chimeChecking || usaaChecking
+                ? ` (account rows still editable below).`
+                : "."}
             </p>
           </div>
         )}

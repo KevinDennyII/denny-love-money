@@ -152,10 +152,6 @@ function SettlementPotRow({ account }: { account: Account }) {
               <h3 className="font-semibold text-lg">Settlement pot</h3>
               {live && <LiveBadge />}
             </div>
-            <p className="text-sm text-muted-foreground truncate">
-              {account.name}
-              {account.accountNumber ? ` ····${account.accountNumber.slice(-4)}` : ""}
-            </p>
           </div>
         </div>
 

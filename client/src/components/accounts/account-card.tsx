@@ -80,6 +80,8 @@ export function EditAccountDialog({ account, onClose }: { account: Account; onCl
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/incomes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/savings-allocations'] });
       toast({
         title: "Account deleted",
         description: "Your account has been removed.",

@@ -8,6 +8,7 @@ import {
   medicalBills, insertMedicalBillSchema, type MedicalBill, type InsertMedicalBill,
   hsaPaybacks, insertHsaPaybackSchema, type HsaPayback, type InsertHsaPayback,
   assets, insertAssetSchema, type Asset, type InsertAsset,
+  transactions,
   privacyTransactions, type PrivacyTransaction, type InsertPrivacyTransaction,
   users, type User, type InsertUser,
 } from "@shared/schema";
@@ -113,6 +114,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAccount(id: string): Promise<boolean> {
+    // Clear optional FK refs first — ON DELETE NO ACTION blocks account removal otherwise.
+    await db.update(incomes).set({ accountId: null }).where(eq(incomes.accountId, id));
+    await db
+      .update(savingsAllocations)
+      .set({ accountId: null })
+      .where(eq(savingsAllocations.accountId, id));
+    await db
+      .update(transactions)
+      .set({ accountId: null })
+      .where(eq(transactions.accountId, id));
+
     const result = await db.delete(accounts).where(eq(accounts.id, id)).returning();
     return result.length > 0;
   }

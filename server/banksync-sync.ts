@@ -250,11 +250,30 @@ function findAccountByInstitutionAndHints(
       return Boolean(remoteLast4 && local4 === remoteLast4);
     });
 
-    // Savings first — never collapse onto Checking / prepaid
+    // Savings first — never collapse onto Checking / prepaid.
+    // Keep Jamie's personal sink apart from the joint settlement pot.
     if (remoteIsSavings) {
+      const savings = compatible.filter((a) => a.accountType === "savings");
+      if (isJamieChimeRemote(remote, remoteLast4)) {
+        return (
+          savings.find((a) => a.owner === "Jamie" || /jamie/i.test(a.name)) ??
+          savings[0]
+        );
+      }
       return (
-        compatible.find((a) => a.accountType === "savings") ??
-        available(accounts).find((a) => /chime/i.test(a.name) && a.accountType === "savings")
+        savings.find(
+          (a) =>
+            /payoff|settlement/i.test(a.name) || /settlement/i.test(a.notes ?? ""),
+        ) ??
+        savings.find((a) => a.owner === "Joint" && !/jamie/i.test(a.name)) ??
+        savings.find((a) => a.owner !== "Jamie" && !/jamie/i.test(a.name)) ??
+        savings[0] ??
+        available(accounts).find(
+          (a) =>
+            /chime/i.test(a.name) &&
+            a.accountType === "savings" &&
+            !/jamie/i.test(a.name),
+        )
       );
     }
 

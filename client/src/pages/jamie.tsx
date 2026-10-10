@@ -101,7 +101,7 @@ function findJamieUsaaChecking(accounts: Account[]): Account | undefined {
 
 /** Joint Chime Savings — Jamie's CC settlement pot (live BankSync balance). */
 function findSettlementPotAccount(accounts: Account[]): Account | undefined {
-  return accounts.find(
+  const candidates = accounts.filter(
     (a) =>
       a.isActive &&
       a.accountType === "savings" &&
@@ -109,8 +109,26 @@ function findSettlementPotAccount(accounts: Account[]): Account | undefined {
       /chime/i.test(`${a.name} ${a.institution}`) &&
       (a.owner === "Joint" ||
         /settlement/i.test(a.notes ?? "") ||
-        /settlement|payoff/i.test(a.name))
+        /settlement|payoff/i.test(a.name)),
   );
+  if (candidates.length === 0) return undefined;
+  if (candidates.length === 1) return candidates[0];
+
+  // Prefer the BankSync-backed row when a seeded duplicate still sits at $0.
+  return [...candidates].sort((a, b) => {
+    const byBalance = money(b.currentBalance) - money(a.currentBalance);
+    if (byBalance !== 0) return byBalance;
+    const byLast4 = (b.accountNumber ? 1 : 0) - (a.accountNumber ? 1 : 0);
+    if (byLast4 !== 0) return byLast4;
+    const score = (x: Account) =>
+      (/payoff|settlement/i.test(x.name) ? 2 : 0) +
+      (/settlement/i.test(x.notes ?? "") ? 1 : 0);
+    const byScore = score(b) - score(a);
+    if (byScore !== 0) return byScore;
+    const aT = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+    const bT = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+    return bT - aT;
+  })[0];
 }
 
 function SettlementPotRow({ account }: { account: Account }) {

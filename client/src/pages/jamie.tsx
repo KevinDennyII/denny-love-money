@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Dialog } from "@/components/ui/dialog";
 import { formatCurrency, getDebtPayoffProgress } from "@/lib/formatters";
 import { getIncomeDisplayAmount } from "@/lib/income";
 import { JAMIE_PAYCHECK_PLAN as PLAN, paycheckTbdMonthly } from "@/lib/jamie-paycheck-plan";
@@ -17,6 +21,7 @@ import {
   GraduationCap,
   ArrowDown,
   PauseCircle,
+  Pencil,
 } from "lucide-react";
 import type { Account, Asset, Debt, Expense, Income, SavingsAllocation } from "@shared/schema";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -24,12 +29,17 @@ import { DashboardSection } from "@/components/dashboard/dashboard-section";
 import { DebtProgressCard } from "@/components/dashboard/debt-progress-card";
 import { DebtCategory } from "@/components/debts/debt-category";
 import { AddDebtDialog } from "@/components/debts/add-debt-dialog";
-import { AccountCard } from "@/components/accounts/account-card";
+import {
+  AccountCard,
+  EditAccountDialog,
+  isLiveSyncedAccount,
+} from "@/components/accounts/account-card";
 import { IncomeCard } from "@/components/savings/income-card";
 import { SavingsCard } from "@/components/savings/savings-card";
 import { ExpenseCard } from "@/components/budget/expense-card";
 import { AssetCard } from "@/components/networth/asset-card";
 import { OwnerBadge } from "@/components/owner-badge";
+import { LiveBadge } from "@/components/live-badge";
 import { useAuth } from "@/hooks/use-auth";
 
 /** Sheet rollup for micro loans / subscriptions / fees (Sep 2025 Jamie worksheet). */
@@ -87,6 +97,75 @@ function findJamieChimeChecking(accounts: Account[]): Account | undefined {
 
 function findJamieUsaaChecking(accounts: Account[]): Account | undefined {
   return accounts.find((a) => a.owner === "Jamie" && a.isActive && /usaa/i.test(a.name) && /checking/i.test(a.name));
+}
+
+/** Joint Chime Savings — Jamie's CC settlement pot (live BankSync balance). */
+function findSettlementPotAccount(accounts: Account[]): Account | undefined {
+  return accounts.find(
+    (a) =>
+      a.isActive &&
+      a.accountType === "savings" &&
+      !/jamie/i.test(a.name) &&
+      /chime/i.test(`${a.name} ${a.institution}`) &&
+      (a.owner === "Joint" ||
+        /settlement/i.test(a.notes ?? "") ||
+        /settlement|payoff/i.test(a.name))
+  );
+}
+
+function SettlementPotRow({ account }: { account: Account }) {
+  const { readOnly } = useAuth();
+  const [editOpen, setEditOpen] = useState(false);
+  const balance = money(account.currentBalance);
+  const live = isLiveSyncedAccount(account);
+
+  return (
+    <>
+      <div
+        className="group flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all"
+        data-testid={`card-settlement-pot-${account.id}`}
+      >
+        <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
+            <PiggyBank className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold text-lg">Settlement pot</h3>
+              {live && <LiveBadge />}
+            </div>
+            <p className="text-sm text-muted-foreground truncate">
+              {account.name}
+              {account.accountNumber ? ` ····${account.accountNumber.slice(-4)}` : ""}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+          <div className="text-right">
+            <p className="text-xl font-bold text-emerald-500">{formatCurrency(balance)}</p>
+            <Badge variant="outline" className="mt-1">
+              Live balance
+            </Badge>
+          </div>
+          {!readOnly && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-10 w-10 text-muted-foreground hover:text-foreground"
+              onClick={() => setEditOpen(true)}
+              data-testid={`button-edit-settlement-pot-${account.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <EditAccountDialog account={account} onClose={() => setEditOpen(false)} />
+      </Dialog>
+    </>
+  );
 }
 
 function formatPlanAmount(amount: number | null, suffix: string): string {
@@ -229,6 +308,7 @@ export default function JamiePage() {
   const paycheck = jamieIncomes.find((i) => /paycheck/i.test(i.name));
   const chimeChecking = findJamieChimeChecking(accounts);
   const usaaChecking = findJamieUsaaChecking(accounts);
+  const settlementPot = findSettlementPotAccount(accounts);
   const paycheckAmount = paycheck
     ? money(paycheck.amount) || PLAN.monthly
     : PLAN.monthly;
@@ -392,6 +472,7 @@ export default function JamiePage() {
                 />
               ))
             )}
+            {!isLoading && settlementPot && <SettlementPotRow account={settlementPot} />}
           </CardContent>
         </Card>
         <Card>

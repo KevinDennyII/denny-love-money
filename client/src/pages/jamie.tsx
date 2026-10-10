@@ -16,7 +16,6 @@ import {
   Landmark,
   Receipt,
   PiggyBank,
-  TrendingUp,
   ArrowRight,
   GraduationCap,
   ArrowDown,
@@ -26,7 +25,6 @@ import {
 import type { Account, Asset, Debt, Expense, Income, SavingsAllocation } from "@shared/schema";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { DashboardSection } from "@/components/dashboard/dashboard-section";
-import { DebtProgressCard } from "@/components/dashboard/debt-progress-card";
 import { DebtCategory } from "@/components/debts/debt-category";
 import { AddDebtDialog } from "@/components/debts/add-debt-dialog";
 import {
@@ -377,8 +375,6 @@ export default function JamiePage() {
         <AddDebtDialog />
       </div>
 
-      <PaycheckFlowCard />
-
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Paycheck (monthly)"
@@ -461,10 +457,6 @@ export default function JamiePage() {
         />
       </div>
 
-      <DashboardSection title="Debt payoff progress" icon={TrendingUp}>
-        <DebtProgressCard debts={jamieDebts} isLoading={debtsLoading} />
-      </DashboardSection>
-
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
@@ -515,6 +507,8 @@ export default function JamiePage() {
           </CardContent>
         </Card>
       </div>
+
+      <PaycheckFlowCard />
 
       <DashboardSection title="Jamie accounts" icon={Wallet}>
         {accountsLoading ? (
